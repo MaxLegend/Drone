@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.tesmio.drone.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "drone.refmap.json",
+  "mixins": [
+    "MouseHandlerMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
