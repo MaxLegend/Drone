@@ -20,7 +20,8 @@ import ru.tesmio.drone.entity.DroneModel;
 import ru.tesmio.drone.entity.DroneRenderer;
 import ru.tesmio.drone.packets.DroneMovePacket;
 import ru.tesmio.drone.packets.DroneSpeedUpdatePacket;
-
+//убрать пересадку - если в режиме полета дрона тыкнуть по другому дрону, пульт перепривяжется.
+//иногда проскакивают ультразначения углов наклона и поворота, разобраться
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DroneClientEvent {
     private static float currentYaw = 0;
@@ -31,6 +32,15 @@ public class DroneClientEvent {
             "key.drone.exit_control", GLFW.GLFW_KEY_R, "key.categories.drone"
     );
 
+    private static boolean isDroneControlKey(int keyCode) {
+        // Клавиши управления дроном (WASD, Space, Shift)
+        return keyCode == mc.options.keyUp.getKey().getValue() ||
+                keyCode == mc.options.keyDown.getKey().getValue() ||
+                keyCode == mc.options.keyLeft.getKey().getValue() ||
+                keyCode == mc.options.keyRight.getKey().getValue() ||
+                keyCode == mc.options.keyJump.getKey().getValue() ||
+                keyCode == mc.options.keyShift.getKey().getValue();
+    }
 
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
@@ -50,16 +60,26 @@ public class DroneClientEvent {
 
         if (mc.cameraEntity instanceof DroneEntity drone) {
             double delta = event.getScrollDelta();
-            drone.adjustSpeed((float) delta * 0.1f); // масштаб изменения
-            Core.CHANNEL.sendToServer(new DroneSpeedUpdatePacket(drone.getUUID(), drone.getSpeed()));
+            float newSpeed = drone.getSpeed() + (float) delta * 0.1f;
+
+            // Ограничиваем скорость минимальным и максимальным значениями
+            float minSpeed = 0.1f; // Минимальная скорость
+            float maxSpeed = 4.0f;  // Максимальная скорость
+            newSpeed = Mth.clamp(newSpeed, minSpeed, maxSpeed);
+
+            drone.setSpeed(newSpeed);
+        //    System.out.println("speed " + newSpeed);
+            Core.CHANNEL.sendToServer(new DroneSpeedUpdatePacket(drone.getUUID(), newSpeed));
             event.setCanceled(true);
         }
     }
       @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         DroneEntity drone;
+
         if(mc.getCameraEntity() instanceof DroneEntity) drone = (DroneEntity) mc.getCameraEntity();
         else return;
+
         if (event.phase != TickEvent.Phase.END) return;
         // Управление захватом мыши в зависимости от состояния
         mouseGrabber();
@@ -93,13 +113,10 @@ public class DroneClientEvent {
 
             // 5. Ограничение углов
             currentPitch = Math.max(-90.0f, Math.min(90.0f, currentPitch));
-            currentYaw %= 360.0f;
+      //      currentYaw %= 360.0f;
+            drone.setDroneYaw(currentYaw);
+            drone.setDronePitch(currentPitch);
 
-            // 6. Применение к дрону
-       //     drone.setYRot(currentYaw);
-       //     drone.setXRot(currentPitch);
-      //      drone.yRotO = currentYaw;
-       //     drone.xRotO = currentPitch;
         }
         Vec3 movement = Vec3.ZERO;
         // Перехват управления на дрон
@@ -115,7 +132,7 @@ public class DroneClientEvent {
           if (mc.options.keyJump.isDown()) movement = movement.add(up.scale(speed));
           if (mc.options.keyShift.isDown()) movement = movement.subtract(up.scale(speed));
 
-        drone.applyClientMovement(movement);
+        drone.applyClientMovement(movement, currentYaw,currentPitch);
 
         // Отправляем движение и ориентацию на сервер
         Core.CHANNEL.sendToServer(new DroneMovePacket(
@@ -140,7 +157,12 @@ public class DroneClientEvent {
             player.zza = 0;
             player.xxa = 0;
             player.yya = 0;
+            if (mc.getCameraEntity() instanceof DroneEntity) {
+                player.setShiftKeyDown(false);
+                player.setSprinting(false);
+            }
         }
+
     }
     public static void mouseGrabber() {
         if (mc.getCameraEntity() instanceof DroneEntity drone) {
@@ -168,42 +190,7 @@ public class DroneClientEvent {
 
     }
     public static void turnCamera(DroneEntity drone) {
-        // 1. Получаем ТОЛЬКО последние дельты (без накопления)
-        float deltaYaw = (float) mc.mouseHandler.getXVelocity();
-        float deltaPitch = (float) mc.mouseHandler.getYVelocity();
 
-        if (mc.options.invertYMouse().get()) {
-            deltaPitch = -deltaPitch;
-        }
-
-        // 2. Чувствительность (фиксированный масштаб)
-        double sensitivity = mc.options.sensitivity().get();
-        double scale = Math.pow(sensitivity * 0.6 + 0.2, 3) * 0.1; // Уменьшенный множитель
-
-        // 3. Не накапливаем, а используем мгновенные значения
-        float targetYaw = deltaYaw * (float)scale;
-        float targetPitch = deltaPitch * (float)scale;
-
-        // 4. Плавное движение к цели
-        float smoothing = 0.2f;
-        currentYaw = Mth.lerp(smoothing, currentYaw, currentYaw + targetYaw);
-        currentPitch = Mth.lerp(smoothing, currentPitch, currentPitch + targetPitch);
-
-        // 5. Автоматическое торможение при отсутствии ввода
-        if (Math.abs(deltaYaw) < 0.001f && Math.abs(deltaPitch) < 0.001f) {
-            currentYaw *= 0.9f;
-            currentPitch *= 0.9f;
-        }
-
-        // Ограничение углов
-        currentPitch = Math.max(-90.0f, Math.min(90.0f, currentPitch));
-        currentYaw %= 360.0f;
-
-        // Применение к дрону
-        drone.setYRot(currentYaw);
-        drone.setXRot(currentPitch);
-        drone.yRotO = currentYaw;
-        drone.xRotO = currentPitch;
     }
     public static void moveDrone(Minecraft mc, float speed, DroneEntity drone, Vec3 movement) {
 
