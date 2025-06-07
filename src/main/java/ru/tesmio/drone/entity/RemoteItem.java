@@ -26,12 +26,9 @@ public class RemoteItem extends Item {
 
         DroneEntity drone = findDroneByUUID(player, targetUUID);
         if (drone != null) {
-            Minecraft.getInstance().setCameraEntity(drone);
-            drone.setControllingPlayer(player);
-
-
+                Minecraft.getInstance().setCameraEntity(drone);
+            return InteractionResultHolder.success(stack);
         }
-
         return InteractionResultHolder.success(stack);
     }
 

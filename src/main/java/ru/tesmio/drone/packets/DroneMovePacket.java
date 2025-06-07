@@ -20,7 +20,7 @@ public final Vec3 movement;
 public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch) {
     this.droneId = droneId;
     this.movement = movement;
-    this.yaw = yaw;
+       this.yaw = yaw;
     this.pitch = pitch;
 }
 
@@ -49,9 +49,9 @@ public static DroneMovePacket decode(FriendlyByteBuf buf) {
             if (e instanceof DroneEntity drone) {
                 drone.applyServerMovement(pkt.movement, pkt.yaw, pkt.pitch);
                 drone.setYRot(pkt.yaw);
-                drone.setXRot(pkt.pitch);
                 drone.setYHeadRot(pkt.yaw);
                 drone.setYBodyRot(pkt.yaw);
+                drone.setXRot(pkt.pitch);
             }
         });
         ctx.get().setPacketHandled(true);

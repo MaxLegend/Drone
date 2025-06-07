@@ -2,12 +2,17 @@ package ru.tesmio.drone;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.Ticket;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -26,7 +31,7 @@ import ru.tesmio.drone.entity.DroneEntity;
 import ru.tesmio.drone.entity.DroneItem;
 
 import ru.tesmio.drone.entity.RemoteItem;
-import ru.tesmio.drone.event.DroneClientEvent;
+
 import ru.tesmio.drone.packets.DroneMovePacket;
 import ru.tesmio.drone.packets.DroneSpeedUpdatePacket;
 
@@ -40,7 +45,7 @@ public class Core {
     public static final RegistryObject<EntityType<DroneEntity>> DRONE = ENTITIES.register("drone_entity",
             () -> EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
                                     .sized(0.8f, 0.5f) // размеры дрона
-                                    .clientTrackingRange(32)
+                                    .clientTrackingRange(128)
                                     .updateInterval(1)
                                     .build("drone_entity"));
     public static RegistryObject<Item> ITEM_DRONE = ITEMS.register("drone_item", () -> new DroneItem(new Item.Properties()));
@@ -65,7 +70,11 @@ public class Core {
         modEventBus.addListener(this::addCreative);
     }
 
+
+
+
     private void commonSetup(final FMLCommonSetupEvent event) {
+
         CHANNEL.registerMessage(id++, DroneMovePacket.class,
                 DroneMovePacket::encode,
                 DroneMovePacket::decode,
@@ -74,6 +83,10 @@ public class Core {
                 DroneSpeedUpdatePacket::toBytes,
                 DroneSpeedUpdatePacket::new,
                 DroneSpeedUpdatePacket::handle);
+//        CHANNEL.registerMessage(id++, ChunkUpdatePacket.class,
+//                ChunkUpdatePacket::encode,
+//                ChunkUpdatePacket::decode,
+//                ChunkUpdatePacket::handle);
         }
 
     // Add the example block item to the building blocks tab
@@ -96,13 +109,7 @@ public class Core {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-            event.enqueueWork(() -> {
-                KeyMapping[] mappings = new KeyMapping[]{DroneClientEvent.EXIT_CONTROL_KEY};
-                for (KeyMapping km : mappings) net.minecraft.client.Minecraft.getInstance().options.keyMappings =
-                        java.util.Arrays.copyOf(net.minecraft.client.Minecraft.getInstance().options.keyMappings,
-                                net.minecraft.client.Minecraft.getInstance().options.keyMappings.length + 1);
-                net.minecraft.client.Minecraft.getInstance().options.keyMappings[net.minecraft.client.Minecraft.getInstance().options.keyMappings.length - 1] = DroneClientEvent.EXIT_CONTROL_KEY;
-            });
+
         }
     }
 }

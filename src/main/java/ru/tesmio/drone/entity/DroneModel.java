@@ -92,7 +92,6 @@ public class DroneModel extends EntityModel<DroneEntity> {
 			// Ограничиваем максимальный угол наклона (в радианах)
 			float maxTilt = 0.35f; // ~20 градусов
 
-			// Получаем текущий ввод с клавиш
 
 			float forwardInput = 0;
 			float sidewaysInput = 0;
@@ -101,39 +100,34 @@ public class DroneModel extends EntityModel<DroneEntity> {
 			if (mc.options.keyDown.isDown()) forwardInput -= 1;
 			if (mc.options.keyLeft.isDown()) sidewaysInput -= 1;
 			if (mc.options.keyRight.isDown()) sidewaysInput += 1;
-			// Вычисляем комбинированные наклоны
 			float combinedTilt = maxTilt * (float) Math.sqrt(forwardInput * forwardInput + sidewaysInput * sidewaysInput);
 			combinedTilt = Mth.clamp(combinedTilt, 0, maxTilt);
 
-			// Нормализуем вектор ввода
 			if (forwardInput != 0 || sidewaysInput != 0) {
 				float length = (float) Math.sqrt(forwardInput * forwardInput + sidewaysInput * sidewaysInput);
 				forwardInput /= length;
 				sidewaysInput /= length;
 			}
 
-			// Инвертируем sidewaysInput для правильного наклона
 			sidewaysInput = -sidewaysInput;
 
-			// Вычисляем целевые наклоны
 			float targetTiltForward = forwardInput * combinedTilt;
 			float targetTiltSideways = sidewaysInput * combinedTilt;
 
-			// Плавная интерполяция
 			float lerpFactor = 0.2f;
 			this.drone.xRot = Mth.lerp(lerpFactor, this.drone.xRot, targetTiltForward);
 			this.drone.zRot = Mth.lerp(lerpFactor, this.drone.zRot, targetTiltSideways);
 		} else {
-// Анимация "парения", когда дрон не управляется
-			float hoverAmplitude = 0.05f;
-			float hoverSpeed = 0.5f;
+
+			float hoverAmplitude = 0.02f;
+			float hoverSpeed = 0.1f;
 
 			// Используем синусоиду для плавных колебаний
 			float hoverX = Mth.sin(ageInTicks * hoverSpeed) * hoverAmplitude;
 			float hoverZ = Mth.cos(ageInTicks * hoverSpeed) * hoverAmplitude;
 
-			// Интерполяция к целевому положению
-			float lerpFactor = 0.05f;
+			// Интерполяция к целевому положениюe
+			float lerpFactor = 0.02f;
 			this.drone.xRot = Mth.lerp(lerpFactor, this.drone.xRot, hoverX);
 			this.drone.zRot = Mth.lerp(lerpFactor, this.drone.zRot, hoverZ);
 		}
