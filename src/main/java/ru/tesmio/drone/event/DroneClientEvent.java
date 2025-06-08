@@ -1,50 +1,43 @@
 package ru.tesmio.drone.event;
 
-import com.mojang.blaze3d.Blaze3D;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.util.Mth;
-import net.minecraft.util.SmoothDouble;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Quaternionf;
-import org.lwjgl.glfw.GLFW;
-import ru.tesmio.drone.Core;
 
-import ru.tesmio.drone.entity.DroneEntity;
-import ru.tesmio.drone.entity.DroneModel;
-import ru.tesmio.drone.entity.DroneRenderer;
-import ru.tesmio.drone.packets.DroneMovePacket;
-import ru.tesmio.drone.packets.DroneSpeedUpdatePacket;
+import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.DroneHUD;
+import ru.tesmio.drone.packets.server.DroneFlightModeServerPacket;
 
-import static ru.tesmio.drone.entity.DroneController.*;
+import static ru.tesmio.drone.drone.DroneController.*;
 
 //убрать пересадку - если в режиме полета дрона тыкнуть по другому дрону, пульт перепривяжется.
 //иногда проскакивают ультразначения углов наклона и поворота, разобраться
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DroneClientEvent {
+    static Minecraft mc = Minecraft.getInstance();
+    static boolean guiOpen = mc.screen != null;
 
-
-      @SubscribeEvent
+    @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
-        Minecraft mc = Minecraft.getInstance();
+
         if (mc.getCameraEntity() instanceof DroneEntity) {
             event.setCanceled(true);
         }
     }
-
-    static Minecraft mc = Minecraft.getInstance();
-    static boolean guiOpen = mc.screen != null;
-
-       @SubscribeEvent
+    @SubscribeEvent
+    public static void onKeyInput(InputEvent.Key event) {
+        if (FLIGHT_MODE_KEY.consumeClick()) {
+            if(mc.getCameraEntity() instanceof DroneEntity drone) {
+                DroneFlightModeServerPacket.sendToServer(drone.getUUID());
+            }
+        }
+    }
+    @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-           DroneEntity drone;
+        DroneEntity drone;
 
         if(mc.getCameraEntity() instanceof DroneEntity) drone = (DroneEntity) mc.getCameraEntity();
         else return;
@@ -57,7 +50,9 @@ public class DroneClientEvent {
         exitControl();
     }
 
-
-
+    @SubscribeEvent
+    public static void onRenderGui(RenderGuiEvent.Post event) {
+        DroneHUD.render(event.getGuiGraphics(), event.getPartialTick());
+    }
 }
 

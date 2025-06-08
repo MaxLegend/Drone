@@ -1,4 +1,4 @@
-package ru.tesmio.drone.packets;
+package ru.tesmio.drone.packets.client;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -7,17 +7,17 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import ru.tesmio.drone.entity.DroneEntity;
+import ru.tesmio.drone.drone.DroneEntity;
 
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public class DroneMovePacket  {
     public final UUID droneId;
-public final Vec3 movement;
-        public final float yaw, pitch;
+    public final Vec3 movement;
+    public final float yaw, pitch;
 
-public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch) {
+    public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch) {
     this.droneId = droneId;
     this.movement = movement;
        this.yaw = yaw;

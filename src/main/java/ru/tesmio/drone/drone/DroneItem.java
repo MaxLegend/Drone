@@ -1,4 +1,4 @@
-package ru.tesmio.drone.entity;
+package ru.tesmio.drone.drone;
 
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;

@@ -1,4 +1,4 @@
-package ru.tesmio.drone.entity;
+package ru.tesmio.drone.drone;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -9,7 +9,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 import ru.tesmio.drone.Core;
-import ru.tesmio.drone.packets.DroneMovePacket;
+
+import ru.tesmio.drone.packets.PacketSystem;
+import ru.tesmio.drone.packets.client.DroneMovePacket;
 
 public class DroneController {
     public static final KeyMapping EXIT_CONTROL_KEY = new KeyMapping(
@@ -19,10 +21,17 @@ public class DroneController {
             GLFW.GLFW_KEY_R, // Клавиша по умолчанию (R)
             "key.category.drone" // Категория в настройках управления
     );
+    public static final KeyMapping FLIGHT_MODE_KEY = new KeyMapping(
+            "key.drone.flight_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_M,
+            "key.categories.drone"
+    );
     private static float currentYaw = 0;
     private static float currentPitch = 0;
-    private static boolean mouseGrabbed = false;
+    public static boolean mouseGrabbed = false;
     private static Minecraft mc = Minecraft.getInstance();
+
 
     public static void stopPlayer(Player player) {
         if (player != null) {
@@ -39,12 +48,6 @@ public class DroneController {
     public static void exitControl() {
         if (EXIT_CONTROL_KEY.consumeClick()) {
             mc.setCameraEntity(mc.player);
-            if (mc.player != null) {
-                mc.player.setInvisible(false);
-                mc.player.setInvulnerable(false);
-                mc.player.setNoGravity(false);
-                mc.player.stopRiding();
-            }
             if (mouseGrabbed) {
                 mc.mouseHandler.releaseMouse();
                 mouseGrabbed = false;
@@ -75,9 +78,9 @@ public class DroneController {
         Vec3 movement = Vec3.ZERO;
         // Перехват управления на дрон
         float speed = 0.2f;
-        double rad = Math.toRadians(currentYaw);
+        double rad = Math.toRadians(drone.getYRot());
         Vec3 forward = new Vec3(-Math.sin(rad), 0, Math.cos(rad));
-        Vec3 right = forward.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 right   = forward.cross(new Vec3(0,1,0)).normalize();
         Vec3 up = new Vec3(0, 1, 0);
         if (mc.options.keyUp.isDown()) movement = movement.add(forward.scale(speed));
         if (mc.options.keyDown.isDown()) movement = movement.subtract(forward.scale(speed));
@@ -85,10 +88,12 @@ public class DroneController {
         if (mc.options.keyRight.isDown()) movement = movement.add(right.scale(speed));
         if (mc.options.keyJump.isDown()) movement = movement.add(up.scale(speed));
         if (mc.options.keyShift.isDown()) movement = movement.subtract(up.scale(speed));
-
+        if (!movement.equals(Vec3.ZERO)) {
+      //      System.out.printf("[DRONE CLIENT] Movement input: %s, Yaw: %.2f, Pitch: %.2f%n", movement, currentYaw, currentPitch);
+        }
         drone.applyClientMovement(movement, currentYaw, currentPitch);
 
-        Core.CHANNEL.sendToServer(new DroneMovePacket(
+        PacketSystem.CHANNEL.sendToServer(new DroneMovePacket(
                 drone.getUUID(),
                 movement,
                 currentYaw, currentPitch
@@ -113,6 +118,7 @@ public class DroneController {
 
             // Ограничение pitch, но не yaw
             currentPitch = Mth.clamp(currentPitch, -45.0f, 90.0f);
+      //      System.out.printf("[DRONE CLIENT] Turn input - Yaw: %.2f, Pitch: %.2f%n", currentYaw, currentPitch);
 
             // yaw теперь может накапливаться бесконечно
             drone.setDroneYaw(currentYaw);

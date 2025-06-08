@@ -5,8 +5,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import ru.tesmio.drone.Core;
-import ru.tesmio.drone.entity.DroneModel;
-import ru.tesmio.drone.entity.DroneRenderer;
+import ru.tesmio.drone.drone.DroneModel;
+import ru.tesmio.drone.drone.DroneRenderer;
 @Mod.EventBusSubscriber(modid = Core.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class RendererEvent {
     @SubscribeEvent
