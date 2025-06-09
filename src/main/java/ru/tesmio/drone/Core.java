@@ -1,6 +1,5 @@
 package ru.tesmio.drone;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -15,22 +14,15 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import ru.tesmio.drone.drone.DroneEntity;
-import ru.tesmio.drone.drone.DroneItem;
+import ru.tesmio.drone.droneold.DroneItem;
 
-import ru.tesmio.drone.drone.RemoteItem;
+import ru.tesmio.drone.droneold.RemoteItem;
 
 import ru.tesmio.drone.packets.*;
-import ru.tesmio.drone.packets.client.ActionBarMessagePacket;
-import ru.tesmio.drone.packets.client.DroneControllerPacket;
-import ru.tesmio.drone.packets.client.DroneDeathPacket;
-import ru.tesmio.drone.packets.client.DroneMovePacket;
-import ru.tesmio.drone.packets.server.DroneFlightModeServerPacket;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Core.MODID)
@@ -41,7 +33,7 @@ public class Core {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<EntityType<DroneEntity>> DRONE = ENTITIES.register("drone_entity",
             () -> EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
-                                    .sized(0.8f, 0.5f) // размеры дрона
+                                    .sized(0.5f, 0.5f) // размеры дрона
                                     .clientTrackingRange(32)
                                     .updateInterval(1)
                                     .canSpawnFarFromPlayer()

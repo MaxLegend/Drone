@@ -7,27 +7,27 @@ import ru.tesmio.drone.drone.DroneEntity;
 
 import java.util.function.Supplier;
 
-public class DroneFlightModePacket {
-    private final DroneEntity.FlightMode mode;
+public class DroneStabModePacket {
+    private final DroneEntity.StabMode mode;
 
-    public DroneFlightModePacket(DroneEntity.FlightMode mode) {
+    public DroneStabModePacket(DroneEntity.StabMode mode) {
         this.mode = mode;
     }
 
-    public static void encode(DroneFlightModePacket packet, FriendlyByteBuf buf) {
+    public static void encode(DroneStabModePacket packet, FriendlyByteBuf buf) {
         buf.writeInt(packet.mode.ordinal());
     }
 
-    public static DroneFlightModePacket decode(FriendlyByteBuf buf) {
+    public static DroneStabModePacket decode(FriendlyByteBuf buf) {
         int ordinal = buf.readInt();
-        return new DroneFlightModePacket(DroneEntity.FlightMode.values()[ordinal]);
+        return new DroneStabModePacket(DroneEntity.StabMode.values()[ordinal]);
     }
 
-    public static void handle(DroneFlightModePacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
+    public static void handle(DroneStabModePacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
         contextSupplier.get().enqueueWork(() -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.level != null) {
-                mc.player.displayClientMessage(packet.mode.getDisplayText(), true);
+                mc.player.displayClientMessage(packet.mode.getDisplayMode(), true);
             }
         });
         contextSupplier.get().setPacketHandled(true);

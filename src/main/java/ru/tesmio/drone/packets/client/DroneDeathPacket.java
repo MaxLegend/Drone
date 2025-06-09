@@ -7,7 +7,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static ru.tesmio.drone.drone.DroneController.mouseGrabbed;
+import static ru.tesmio.drone.droneold.DroneController.mouseGrabbed;
 
 public class DroneDeathPacket {
     private final boolean enterControl;

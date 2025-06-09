@@ -11,28 +11,28 @@ import ru.tesmio.drone.packets.PacketSystem;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class DroneFlightModeServerPacket {
+public class DroneStabModeServerPacket {
     private final UUID droneId;
-    public DroneFlightModeServerPacket(UUID droneId) {
+    public DroneStabModeServerPacket(UUID droneId) {
         this.droneId = droneId;
     }
 
     public static void sendToServer(UUID droneId) {
-        PacketSystem.CHANNEL.sendToServer(new DroneFlightModeServerPacket(droneId));
+        PacketSystem.CHANNEL.sendToServer(new DroneStabModeServerPacket(droneId));
     }
 
     // ------------------------
     // Serialization
-    public static void encode(DroneFlightModeServerPacket msg, FriendlyByteBuf buf) {
+    public static void encode(DroneStabModeServerPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.droneId);
     }
 
-    public static DroneFlightModeServerPacket decode(FriendlyByteBuf buf) {
+    public static DroneStabModeServerPacket decode(FriendlyByteBuf buf) {
         UUID droneId = buf.readUUID();
-        return new DroneFlightModeServerPacket(droneId);
+        return new DroneStabModeServerPacket(droneId);
     }
 
-    public static void handle(DroneFlightModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(DroneStabModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
@@ -42,7 +42,7 @@ public class DroneFlightModeServerPacket {
 
             if (entity instanceof DroneEntity drone) {
                 if (drone.getControllerUUID() != null && drone.getControllerUUID().equals(player.getUUID())) {
-                    drone.cycleFlightMode();
+                    drone.cycleStabMode();
                 }
             }
         });

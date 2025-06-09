@@ -15,13 +15,14 @@ import java.util.function.Supplier;
 public class DroneMovePacket  {
     public final UUID droneId;
     public final Vec3 movement;
-    public final float yaw, pitch;
+    public final float yaw, pitch, roll;
 
-    public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch) {
+    public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch, float roll) {
     this.droneId = droneId;
     this.movement = movement;
-       this.yaw = yaw;
+    this.yaw = yaw;
     this.pitch = pitch;
+    this.roll = roll;
 }
 
 public static void encode(DroneMovePacket pkt, FriendlyByteBuf buf) {
@@ -31,6 +32,7 @@ public static void encode(DroneMovePacket pkt, FriendlyByteBuf buf) {
     buf.writeDouble(pkt.movement.z);
     buf.writeFloat(pkt.yaw);
     buf.writeFloat(pkt.pitch);
+    buf.writeFloat(pkt.roll);
 }
 
 public static DroneMovePacket decode(FriendlyByteBuf buf) {
@@ -38,7 +40,8 @@ public static DroneMovePacket decode(FriendlyByteBuf buf) {
     Vec3 mv = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
     float yaw = buf.readFloat();
     float pitch = buf.readFloat();
-    return new DroneMovePacket(id, mv, yaw, pitch);
+    float roll = buf.readFloat();
+    return new DroneMovePacket(id, mv, yaw, pitch, roll);
 }
     public static void handle(DroneMovePacket pkt, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
@@ -47,11 +50,7 @@ public static DroneMovePacket decode(FriendlyByteBuf buf) {
 
             Entity e = ((ServerLevel) level).getEntity(pkt.droneId);
             if (e instanceof DroneEntity drone) {
-                drone.applyServerMovement(pkt.movement, pkt.yaw, pkt.pitch);
-                drone.setYRot(pkt.yaw);
-                drone.setYHeadRot(pkt.yaw);
-                drone.setYBodyRot(pkt.yaw);
-                drone.setXRot(pkt.pitch);
+                drone.applyServerMovement(pkt.movement, pkt.yaw, pkt.pitch, pkt.roll);
             }
         });
         ctx.get().setPacketHandled(true);

@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone;
+package ru.tesmio.drone.droneold;
 
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -7,6 +7,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import ru.tesmio.drone.Core;
+import ru.tesmio.drone.drone.DroneEntity;
 
 public class DroneItem extends Item {
     public DroneItem(Properties properties) {

@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone;
+package ru.tesmio.drone.droneold;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -8,6 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import ru.tesmio.drone.drone.DroneEntity;
 
 public class DroneHUD {
     private static final Minecraft mc = Minecraft.getInstance();
@@ -31,7 +32,7 @@ public class DroneHUD {
 
         // Рассчитываем высоту до земли
         float heightAboveGround = calculateHeightAboveGround(drone);
-        String uuidclient = drone.getControllingPlayerUUID() == null ? "🟥 DISCONNECTED" : "🟩 CONNECTED";
+        String uuidclient = drone.getControllerUUID() == null ? "🟥 DISCONNECTED" : "🟩 CONNECTED";
         // Начинаем отрисовку
         poseStack.pushPose();
 
@@ -80,15 +81,19 @@ public class DroneHUD {
 
     private static float calculateSignalStrength(DroneEntity drone) {
        // System.out.println("player " + drone.getControllingPlayerUUID());
-        if (drone.getControllingPlayerUUID() == null) return 0;
+        if (drone.getControllerUUID() == null) return 0;
 
-        Player player = drone.level().getPlayerByUUID(drone.getControllingPlayerUUID());
+        Player player = drone.level().getPlayerByUUID(drone.getControllerUUID());
 
         if (player == null) return 0;
-
+        // System.out.println("player " + drone.getControllingPlayerUUID());
+        float maxDist = Math.min(drone.getSyncView(), drone.getSyncSimDist());
+       // double maxDist = (minChunks - 2) * 16.0;
+        double maxDistSq = maxDist * maxDist;
         double distance = player.distanceTo(drone);
-        double maxDistance = 128; // Максимальное расстояние управления
-        double signal = 100 * (1 - distance / maxDistance);
+        double maxDistance = maxDistSq; // Максимальное расстояние управления
+        //  System.out.println("player " +drone.getSyncView());
+        double signal = 100 * (1 - distance / maxDistSq);
 
         return (float) Mth.clamp(signal, 0, 100);
     }

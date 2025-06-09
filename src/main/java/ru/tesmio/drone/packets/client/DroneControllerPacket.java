@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import ru.tesmio.drone.drone.DroneEntity;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -33,12 +34,12 @@ public class DroneControllerPacket {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 Player player = Minecraft.getInstance().player;
                 if (player == null) return;
-                player.level().getEntitiesOfClass(ru.tesmio.drone.drone.DroneEntity.class, player.getBoundingBox().inflate(64))
+                player.level().getEntitiesOfClass(DroneEntity.class, player.getBoundingBox().inflate(64))
                             .stream()
                             .filter(d -> d.getUUID().equals(msg.droneUUID))
                             .findFirst()
                             .ifPresent(d -> {
-                                d.setControllingPlayerUUIDClient(msg.controllerUUID);
+                                d.setControllerUUID(msg.controllerUUID);
                             });
             });
         });

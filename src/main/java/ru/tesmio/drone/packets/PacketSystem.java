@@ -6,6 +6,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.packets.client.*;
 import ru.tesmio.drone.packets.server.DroneFlightModeServerPacket;
+import ru.tesmio.drone.packets.server.DroneStabModeServerPacket;
 
 public class PacketSystem {
     private static int id = 0;
@@ -41,5 +42,17 @@ public class PacketSystem {
                 DroneFlightModeServerPacket::encode,
                 DroneFlightModeServerPacket::decode,
                 DroneFlightModeServerPacket::handle);
+        CHANNEL.registerMessage(id++, DistanceControlPacket.class,
+                DistanceControlPacket::encode,
+                DistanceControlPacket::decode,
+                DistanceControlPacket::handle);
+        CHANNEL.registerMessage(id++, DroneStabModePacket.class,
+                DroneStabModePacket::encode,
+                DroneStabModePacket::decode,
+                DroneStabModePacket::handle);
+        CHANNEL.registerMessage(id++, DroneStabModeServerPacket.class,
+                DroneStabModeServerPacket::encode,
+                DroneStabModeServerPacket::decode,
+                DroneStabModeServerPacket::handle);
     }
 }

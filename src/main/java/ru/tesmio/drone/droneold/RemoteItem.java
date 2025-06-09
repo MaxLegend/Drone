@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone;
+package ru.tesmio.drone.droneold;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -8,6 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import ru.tesmio.drone.drone.DroneEntity;
 
 import java.util.UUID;
 
@@ -18,14 +19,18 @@ public class RemoteItem extends Item {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (!level.isClientSide) return InteractionResultHolder.pass(player.getItemInHand(hand));
+
+        if (!level.isClientSide) {
+            return InteractionResultHolder.pass(player.getItemInHand(hand));
+        }
 
         ItemStack stack = player.getItemInHand(hand);
         UUID targetUUID = getLinkedDroneUUID(stack);
 
         DroneEntity drone = findDroneByUUID(player, targetUUID);
+
         if (drone != null) {
-                Minecraft.getInstance().setCameraEntity(drone);
+            Minecraft.getInstance().setCameraEntity(drone);
             return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.success(stack);

@@ -1,7 +1,7 @@
 // Made with Blockbench 4.12.4
 // Exported for Minecraft version 1.17 or later with Mojang mappings
 // Paste this class into your mod and generate all required imports
-package ru.tesmio.drone.drone;
+package ru.tesmio.drone.droneold;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -14,6 +14,7 @@ import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import ru.tesmio.drone.Core;
+import ru.tesmio.drone.drone.DroneEntity;
 
 public class DroneModel extends EntityModel<DroneEntity> {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
@@ -86,36 +87,6 @@ public class DroneModel extends EntityModel<DroneEntity> {
 			this.prop2.yRot = ageInTicks * -2;
 			this.prop3.yRot = ageInTicks * -2f;
 			this.prop4.yRot = ageInTicks * 2f;
-		if (mc.getCameraEntity() instanceof DroneEntity controlledDrone && controlledDrone == droneEntity) {
-			// Ограничиваем максимальный угол наклона (в радианах)
-			float maxTilt = 0.35f; // ~20 градусов
-
-
-			float forwardInput = 0;
-			float sidewaysInput = 0;
-
-			if (mc.options.keyUp.isDown()) forwardInput += 1;
-			if (mc.options.keyDown.isDown()) forwardInput -= 1;
-			if (mc.options.keyLeft.isDown()) sidewaysInput -= 1;
-			if (mc.options.keyRight.isDown()) sidewaysInput += 1;
-			float combinedTilt = maxTilt * (float) Math.sqrt(forwardInput * forwardInput + sidewaysInput * sidewaysInput);
-			combinedTilt = Mth.clamp(combinedTilt, 0, maxTilt);
-
-			if (forwardInput != 0 || sidewaysInput != 0) {
-				float length = (float) Math.sqrt(forwardInput * forwardInput + sidewaysInput * sidewaysInput);
-				forwardInput /= length;
-				sidewaysInput /= length;
-			}
-
-			sidewaysInput = -sidewaysInput;
-
-			float targetTiltForward = forwardInput * combinedTilt;
-			float targetTiltSideways = sidewaysInput * combinedTilt;
-
-			float lerpFactor = 0.2f;
-			this.drone.xRot = Mth.lerp(lerpFactor, this.drone.xRot, targetTiltForward);
-			this.drone.zRot = Mth.lerp(lerpFactor, this.drone.zRot, targetTiltSideways);
-		} else {
 
 			float hoverAmplitude = 0.02f;
 			float hoverSpeed = 0.1f;
@@ -129,5 +100,5 @@ public class DroneModel extends EntityModel<DroneEntity> {
 			this.drone.xRot = Mth.lerp(lerpFactor, this.drone.xRot, hoverX);
 			this.drone.zRot = Mth.lerp(lerpFactor, this.drone.zRot, hoverZ);
 		}
-	}
+
 }
