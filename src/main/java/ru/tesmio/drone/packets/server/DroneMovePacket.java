@@ -1,4 +1,4 @@
-package ru.tesmio.drone.packets.client;
+package ru.tesmio.drone.packets.server;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -15,42 +15,37 @@ import java.util.function.Supplier;
 public class DroneMovePacket  {
     public final UUID droneId;
     public final Vec3 movement;
-    public final float yaw, pitch, roll;
 
-    public DroneMovePacket(UUID droneId, Vec3 movement, float yaw, float pitch, float roll) {
+
+    public DroneMovePacket(UUID droneId, Vec3 movement) {
     this.droneId = droneId;
     this.movement = movement;
-    this.yaw = yaw;
-    this.pitch = pitch;
-    this.roll = roll;
+
 }
 
 public static void encode(DroneMovePacket pkt, FriendlyByteBuf buf) {
     buf.writeUUID(pkt.droneId);
-    buf.writeDouble(pkt.movement.x);
-    buf.writeDouble(pkt.movement.y);
-    buf.writeDouble(pkt.movement.z);
-    buf.writeFloat(pkt.yaw);
-    buf.writeFloat(pkt.pitch);
-    buf.writeFloat(pkt.roll);
+    buf.writeShort((short)(pkt.movement.x * 100));
+    buf.writeShort((short)(pkt.movement.y * 100));
+    buf.writeShort((short)(pkt.movement.z * 100));
 }
 
 public static DroneMovePacket decode(FriendlyByteBuf buf) {
     UUID id = buf.readUUID();
-    Vec3 mv = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
-    float yaw = buf.readFloat();
-    float pitch = buf.readFloat();
-    float roll = buf.readFloat();
-    return new DroneMovePacket(id, mv, yaw, pitch, roll);
+    Vec3 mv = new Vec3(
+            buf.readShort() / 100.0,
+            buf.readShort() / 100.0,
+            buf.readShort() / 100.0
+    );
+    return new DroneMovePacket(id, mv);
 }
     public static void handle(DroneMovePacket pkt, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             Level level = player.level();
-
             Entity e = ((ServerLevel) level).getEntity(pkt.droneId);
             if (e instanceof DroneEntity drone) {
-                drone.applyServerMovement(pkt.movement, pkt.yaw, pkt.pitch, pkt.roll);
+                drone.applyServerMovement(pkt.movement);
             }
         });
         ctx.get().setPacketHandled(true);

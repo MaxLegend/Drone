@@ -21,8 +21,6 @@ public class DroneStabModeServerPacket {
         PacketSystem.CHANNEL.sendToServer(new DroneStabModeServerPacket(droneId));
     }
 
-    // ------------------------
-    // Serialization
     public static void encode(DroneStabModeServerPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.droneId);
     }
@@ -34,6 +32,7 @@ public class DroneStabModeServerPacket {
 
     public static void handle(DroneStabModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+
             ServerPlayer player = ctx.get().getSender();
             if (player == null) return;
 
@@ -45,6 +44,7 @@ public class DroneStabModeServerPacket {
                     drone.cycleStabMode();
                 }
             }
+
         });
         ctx.get().setPacketHandled(true);
     }

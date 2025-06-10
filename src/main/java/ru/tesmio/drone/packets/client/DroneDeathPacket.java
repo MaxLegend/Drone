@@ -1,16 +1,15 @@
 package ru.tesmio.drone.packets.client;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
-
+import ru.tesmio.drone.packets.PacketClientHandler;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static ru.tesmio.drone.droneold.DroneController.mouseGrabbed;
+
 
 public class DroneDeathPacket {
-    private final boolean enterControl;
+    public final boolean enterControl;
     private final UUID droneUUID;
     public DroneDeathPacket(boolean enterControl, UUID droneUUID) {
         this.enterControl = enterControl;
@@ -29,19 +28,8 @@ public class DroneDeathPacket {
     }
 
     public static void handle(DroneDeathPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (!msg.enterControl) {
-
-                mc.setCameraEntity(mc.player);
-
-                if (mouseGrabbed) {
-
-                    mc.mouseHandler.releaseMouse();
-                    mouseGrabbed = false;
-                }
-            }
-        });
+        ctx.get().enqueueWork(() -> PacketClientHandler.handleDeathPacket(msg));
         ctx.get().setPacketHandled(true);
     }
+
 }

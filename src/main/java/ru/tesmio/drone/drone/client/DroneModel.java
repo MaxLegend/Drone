@@ -1,31 +1,29 @@
 // Made with Blockbench 4.12.4
 // Exported for Minecraft version 1.17 or later with Mojang mappings
 // Paste this class into your mod and generate all required imports
-package ru.tesmio.drone.droneold;
+package ru.tesmio.drone.drone.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.drone.DroneEntity;
 
 public class DroneModel extends EntityModel<DroneEntity> {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Core.MODID, "drone_entity"), "main");
-	private final ModelPart drone;
-	private final ModelPart body;
-	private final ModelPart prop1;
-	private final ModelPart prop2;
-	private final ModelPart prop3;
-	private final ModelPart prop4;
-	private final ModelPart cam;
+	public final ModelPart drone;
+	public final ModelPart body;
+	public final ModelPart prop1;
+	public final ModelPart prop2;
+	public final ModelPart prop3;
+	public final ModelPart prop4;
+	public final ModelPart cam;
 
 	public DroneModel(ModelPart root) {
 		this.drone = root.getChild("drone");
@@ -81,24 +79,6 @@ public class DroneModel extends EntityModel<DroneEntity> {
 
 	@Override
 	public void setupAnim(DroneEntity droneEntity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-		Minecraft mc = Minecraft.getInstance();
-
-			this.prop1.yRot = ageInTicks * 2f;
-			this.prop2.yRot = ageInTicks * -2;
-			this.prop3.yRot = ageInTicks * -2f;
-			this.prop4.yRot = ageInTicks * 2f;
-
-			float hoverAmplitude = 0.02f;
-			float hoverSpeed = 0.1f;
-
-			// Используем синусоиду для плавных колебаний
-			float hoverX = Mth.sin(ageInTicks * hoverSpeed) * hoverAmplitude;
-			float hoverZ = Mth.cos(ageInTicks * hoverSpeed) * hoverAmplitude;
-
-			// Интерполяция к целевому положениюe
-			float lerpFactor = 0.02f;
-			this.drone.xRot = Mth.lerp(lerpFactor, this.drone.xRot, hoverX);
-			this.drone.zRot = Mth.lerp(lerpFactor, this.drone.zRot, hoverZ);
-		}
+	}
 
 }

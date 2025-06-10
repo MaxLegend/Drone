@@ -5,9 +5,13 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.packets.client.*;
-import ru.tesmio.drone.packets.server.DroneFlightModeServerPacket;
-import ru.tesmio.drone.packets.server.DroneStabModeServerPacket;
+import ru.tesmio.drone.packets.server.*;
 
+
+//TODO: Реализовать методы оптимизации пакетов: квантование и предсказание как предлагает deepseek
+// (с линейной интерполяцией) и отправкой не каждый тик, а каждые три-пять тиков, а на клиенте проводить
+// интерполяцию между этими значениями. Доработать в стиле UDP - с возможностью потери пакетов
+// добавить сжатие данных. Реализовать приоритезацию и буферизацию пакетов
 public class PacketSystem {
     private static int id = 0;
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -18,10 +22,14 @@ public class PacketSystem {
     );
 
     public static void initPackets() {
-     CHANNEL.registerMessage(id++,DroneMovePacket .class,
+     CHANNEL.registerMessage(id++, DroneMovePacket.class,
              DroneMovePacket::encode,
     DroneMovePacket::decode,
     DroneMovePacket::handle);
+        CHANNEL.registerMessage(id++, DroneViewPacket.class,
+                DroneViewPacket::encode,
+                DroneViewPacket::decode,
+                DroneViewPacket::handle);
         CHANNEL.registerMessage(id++,DroneDeathPacket .class,
     DroneDeathPacket::encode,
     DroneDeathPacket::decode,
@@ -54,5 +62,13 @@ public class PacketSystem {
                 DroneStabModeServerPacket::encode,
                 DroneStabModeServerPacket::decode,
                 DroneStabModeServerPacket::handle);
+        CHANNEL.registerMessage(id++, DroneZoomModePacket.class,
+                DroneZoomModePacket::encode,
+                DroneZoomModePacket::decode,
+                DroneZoomModePacket::handle);
+        CHANNEL.registerMessage(id++, DroneZoomModeServerPacket.class,
+                DroneZoomModeServerPacket::encode,
+                DroneZoomModeServerPacket::decode,
+                DroneZoomModeServerPacket::handle);
     }
 }

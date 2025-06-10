@@ -2,13 +2,16 @@ package ru.tesmio.drone.packets.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.packets.PacketClientHandler;
 
 import java.util.function.Supplier;
 
 public class DroneStabModePacket {
-    private final DroneEntity.StabMode mode;
+    public final DroneEntity.StabMode mode;
 
     public DroneStabModePacket(DroneEntity.StabMode mode) {
         this.mode = mode;
@@ -23,13 +26,8 @@ public class DroneStabModePacket {
         return new DroneStabModePacket(DroneEntity.StabMode.values()[ordinal]);
     }
 
-    public static void handle(DroneStabModePacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        contextSupplier.get().enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null && mc.level != null) {
-                mc.player.displayClientMessage(packet.mode.getDisplayMode(), true);
-            }
-        });
-        contextSupplier.get().setPacketHandled(true);
+    public static void handle(DroneStabModePacket msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> PacketClientHandler.handleDroneStabModePacket(msg));
+        ctx.get().setPacketHandled(true);
     }
 }

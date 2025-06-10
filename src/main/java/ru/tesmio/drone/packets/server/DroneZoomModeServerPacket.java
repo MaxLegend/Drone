@@ -4,8 +4,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import ru.tesmio.drone.drone.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
@@ -13,28 +11,26 @@ import ru.tesmio.drone.packets.PacketSystem;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class DroneFlightModeServerPacket {
+public class DroneZoomModeServerPacket {
     private final UUID droneId;
-    public DroneFlightModeServerPacket(UUID droneId) {
+    public DroneZoomModeServerPacket(UUID droneId) {
         this.droneId = droneId;
     }
 
     public static void sendToServer(UUID droneId) {
-        PacketSystem.CHANNEL.sendToServer(new DroneFlightModeServerPacket(droneId));
+        PacketSystem.CHANNEL.sendToServer(new DroneZoomModeServerPacket(droneId));
     }
 
-    // ------------------------
-    // Serialization
-    public static void encode(DroneFlightModeServerPacket msg, FriendlyByteBuf buf) {
+    public static void encode(DroneZoomModeServerPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.droneId);
     }
 
-    public static DroneFlightModeServerPacket decode(FriendlyByteBuf buf) {
+    public static DroneZoomModeServerPacket decode(FriendlyByteBuf buf) {
         UUID droneId = buf.readUUID();
-        return new DroneFlightModeServerPacket(droneId);
+        return new DroneZoomModeServerPacket(droneId);
     }
 
-    public static void handle(DroneFlightModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(DroneZoomModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
 
             ServerPlayer player = ctx.get().getSender();
@@ -45,10 +41,11 @@ public class DroneFlightModeServerPacket {
 
             if (entity instanceof DroneEntity drone) {
                 if (drone.getControllerUUID() != null && drone.getControllerUUID().equals(player.getUUID())) {
-                    drone.cycleFlightMode();
+                    drone.cycleZoomMode();
                 }
             }
-            });
+
+        });
         ctx.get().setPacketHandled(true);
     }
 }

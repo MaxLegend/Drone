@@ -1,0 +1,26 @@
+{
+  "drone.flight_mode.silent": "§dТихий режим",
+  "drone.flight_mode.slow": "§bМедленный режим",
+  "drone.flight_mode.normal": "§aНормальный режим",
+  "drone.flight_mode.sport": "§5Спортивный режим",
+  "drone.flight_mode.forced_sport": "§4Предельный режим",
+  "fmode.silent": "§dТихий режим",
+  "fmode.slow": "§bМедленный режим",
+  "fmode.normal": "§aНормальный режим",
+  "fmode.sport": "§5Спортивный режим",
+  "fmode.forced_sport": "§4Предельный режим",
+  "drone.stab_mode.stab": "§aСтабилизация",
+  "drone.stab_mode.fpv": "§4FPV-режим",
+  "smode.stab": "§aСтабилизация",
+  "smode.fpv": "§5FPV-режим",
+  "smode.manual": "§4РУЧНОЙ РЕЖИМ",
+  "zmode.def": "Увеличение §a1x",
+  "zmode.x2": "Увеличение §b2x",
+  "zmode.x4": "Увеличение §64x",
+  "zmode.x8": "Увеличение §c8x",
+  "zmode.spec_zoom": "§4Ультра",
+  "drone_message.warn_range": "§eНизкий уровень сигнала!",
+  "drone_message.out_of_range": "§cСигнал потерян!"
+
+
+}

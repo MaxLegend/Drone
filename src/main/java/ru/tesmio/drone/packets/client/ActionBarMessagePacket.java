@@ -1,13 +1,17 @@
 package ru.tesmio.drone.packets.client;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import ru.tesmio.drone.packets.PacketClientHandler;
 
 import java.util.function.Supplier;
 
 public class ActionBarMessagePacket {
-    private final String message;
+    public final String message;
 
     public ActionBarMessagePacket(String message) {
         this.message = message;
@@ -21,14 +25,8 @@ public class ActionBarMessagePacket {
         return new ActionBarMessagePacket(buf.readUtf(32767));
     }
 
-    public static void handle(ActionBarMessagePacket pkt, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            // На клиенте
-            var minecraft = net.minecraft.client.Minecraft.getInstance();
-            if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(Component.translatable(pkt.message), true); // true = actionbar
-            }
-        });
+    public static void handle(ActionBarMessagePacket msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> PacketClientHandler.handleActionBarMessagePacket(msg));
         ctx.get().setPacketHandled(true);
     }
 }

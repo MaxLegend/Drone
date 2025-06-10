@@ -2,6 +2,7 @@ package ru.tesmio.drone.drone.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,73 +16,169 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.drone.DroneEntity;
 
+//TODO: Чистка кода и стилизация. Компас смотрится неорганично, заменить на полупрозрачный рендер круга.
 public class DroneHUD {
-  //  private static final ResourceLocation FRAME = new ResourceLocation(Core.MODID, "textures/gui/hud_frame.png");
-    private static final ResourceLocation SIGNAL_BARS = new ResourceLocation(Core.MODID, "textures/gui/signal_bars.png");
+    private static final ResourceLocation SIGNAL_LEVEL = new ResourceLocation(Core.MODID, "textures/gui/signal_bars.png");
+    private static final ResourceLocation SIGNAL_ICON = new ResourceLocation(Core.MODID, "textures/gui/signal_icon.png");
+    private static final ResourceLocation COMPASS = new ResourceLocation(Core.MODID, "textures/gui/compass.png");
+    private static final int COMPASS_SIZE = 64;
     static Minecraft mc = Minecraft.getInstance();
+    static Font font = mc.font;
+    static int screenWidth,screenHeight;
     public static void renderDroneHud(GuiGraphics guiGraphics) {
         if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
         if (drone.getControllerUUID() == null) return;
+
         PoseStack poseStack = guiGraphics.pose();
         Player player = drone.level().getPlayerByUUID(drone.getControllerUUID());
-        int screenWidth = mc.getWindow().getGuiScaledWidth();
-        int screenHeight = mc.getWindow().getGuiScaledHeight();
-
-        String direction = getCardinalDirection(drone.getYRot());
+        screenWidth = mc.getWindow().getGuiScaledWidth();
+        screenHeight = mc.getWindow().getGuiScaledHeight();
+        renderSignal(guiGraphics, screenWidth, drone);
         poseStack.pushPose();
         poseStack.scale(1.1f, 1.1f, 1.0f);
-        // === 2. Режимы полёта (слева сверху) ===
-        int textColor = 0xFFFFFF;
-        guiGraphics.drawString(mc.font, Component.literal("Mode: " + drone.getFlightMode().name()), 10, 10, textColor);
-        guiGraphics.drawString(mc.font, Component.literal("Stab: " + drone.getStabMode().name()), 130, 10, textColor);
-
-        // === 3. Индикатор сигнала (справа верх) ===
-        int barX = screenWidth - 20;
-        int barY = 20;
-        int barWidth = 10;
-        int barHeight = 50;
-        float signalStrength = calculateSignalStrength(drone);// 0–100
-        int filledHeight = (int)(barHeight * signalStrength / 100f);
-        guiGraphics.blit(SIGNAL_BARS, barX, barY + (barHeight - filledHeight), 0, (barHeight - filledHeight), barWidth, filledHeight, barWidth, barHeight);
-
-        // === 4. GPS и ориентация (справа верх) ===
+        guiGraphics.drawString(mc.font,  drone.getFlightMode().getName(), 10, 10, 0xFFFFFF);
+        guiGraphics.drawString(mc.font, drone.getStabMode().getName(), 130, 10, 0xFFFFFF);
+        guiGraphics.drawString(mc.font,  drone.getZoomMode().getName(), 260, 10, 0xFFFFFF);
         BlockPos pos = drone.blockPosition();
-        int infoX = screenWidth - 150;
-        int rightMargin = 60;
-        int infoY = 20;
-        guiGraphics.drawString(mc.font, Component.literal(   "GPS: " + pos.getX() +" | "+  pos.getY() +" | "+  pos.getZ() ), infoX, infoY - 10, textColor);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :Y", (drone.getDroneYaw() % 360 + 360) % 360),
-                screenWidth - rightMargin, infoY + 10, textColor);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :P", Mth.abs(drone.getDronePitch())),
-                screenWidth - rightMargin, infoY + 23, textColor);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :R", drone.getDroneRoll()),
-                screenWidth - rightMargin, infoY + 36, textColor);
-    //    guiGraphics.drawString(mc.font, Component.literal(String.format("P: %.1f", drone.getDronePitch())), infoX, infoY + 20, textColor);
-   //     guiGraphics.drawString(mc.font, Component.literal(String.format("R: %.1f", drone.getDroneRoll())), infoX, infoY + 30, textColor);    // === 5. Горизонтальная и вертикальная скорость ===
-        int centerX = screenWidth / 2;
-        int y = screenHeight - 40;
+
+        guiGraphics.drawString(mc.font, Component.literal(   "GPS: " + pos.getX() +" | "+  pos.getY() +" | "+  pos.getZ() ), screenWidth - 470, 27, 0xFFFFFF);
+        drawRightAlignedText(guiGraphics, String.format("%.1f° :Y", (drone.getDroneYaw() % 360 + 360) % 360), screenWidth - 60, 30, 0xFFFFFF);
+        drawRightAlignedText(guiGraphics, String.format("%.1f° :P", Mth.abs(drone.getDronePitch())), screenWidth - 60, 43, 0xFFFFFF);
+        drawRightAlignedText(guiGraphics, String.format("%.1f° :R", Mth.abs(drone.getDroneRoll())), screenWidth - 60, 56, 0xFFFFFF);
 
         Vec3 vel = drone.getDeltaMovement();
         float horizSpeed = (float) Math.sqrt(vel.x * vel.x + vel.z * vel.z) * 20f;
         float vertSpeed = (float) vel.y * 20f;
-        double altitude = drone.getY() - drone.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, drone.blockPosition()).getY();
+        double altitude = Mth.abs((float) drone.getY()) - drone.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, drone.blockPosition()).getY();
         double distance = drone.distanceTo(player);
 
+        guiGraphics.drawString(font, Component.literal(String.format("H.S: %.1f m/s", horizSpeed)), (screenWidth / 2) -140, screenHeight - 40, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.literal(String.format("V.S: %.1f m/s",  Mth.abs(vertSpeed))), (screenWidth / 2) -70, screenHeight - 40, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.literal(String.format("H: %.1f m", altitude)), (screenWidth / 2) +5, screenHeight - 40, 0xFFFFFF);
+        guiGraphics.drawString(font, Component.literal(String.format("D: %.1f m", distance)), (screenWidth / 2) + 60, screenHeight - 40, 0xFFFFFF);
 
-        Font font = mc.font;
+        poseStack.popPose();
+        renderDynamicCompassSelfRot(guiGraphics, drone.getDroneYaw(), (screenWidth / 2) + 171, screenHeight - 40 - 49,screenWidth);
+        drawCompassBackground(guiGraphics, screenWidth - 59, 5);
+    }
 
-        guiGraphics.drawString(font, Component.literal(String.format("H.S: %.1f m/s", horizSpeed)), centerX -220, y, textColor);
-        guiGraphics.drawString(font, Component.literal(String.format("V.S: %.1f m/s", vertSpeed)), centerX -140, y, textColor);
-        guiGraphics.drawString(font, Component.literal(String.format("H: %.1f m", altitude)), centerX +5, y, textColor);
-        guiGraphics.drawString(font, Component.literal(String.format("D: %.1f m", distance)), centerX + 60, y, textColor);
-        guiGraphics.drawString(font, Component.literal("D.V: " + direction), centerX + 120, y, textColor);
+    private static void renderSignal(GuiGraphics guiGraphics, int screenWidth, DroneEntity drone) {
+        float exponent = 2.5f;
+        float signalStrength = Mth.clamp(calculateSignalStrength(drone) / 100f, 0f, 1f);
+        signalStrength = 1f - (float) Math.pow(1f - signalStrength, exponent);
+        double distanceSq = drone.distanceToSqr(mc.player);
+        boolean forceFullSignal = distanceSq <= 10 * 10;
+        int rawFilledWidth = (int)(40 * signalStrength);
+        int filledWidth = (rawFilledWidth / 8) * 8;
+
+        if (forceFullSignal || signalStrength >= 0.999f) {
+            filledWidth = 40;
+        }
+
+        if (filledWidth > 0) guiGraphics.blit(SIGNAL_LEVEL, screenWidth - 59, 5, 0, 0, filledWidth, 20, 40, 20);
+
+        guiGraphics.blit(SIGNAL_ICON, screenWidth - 82, 5, 0, 0, 20, 20, 20, 20);
+    }
+
+
+
+    // Вспомогательный метод для рисования стрелки компаса
+    private static void drawCompassBackground(GuiGraphics guiGraphics,int triX, int triY) {
+
+        PoseStack poseStack = guiGraphics.pose();
+        RenderSystem.enableBlend();  // ВКЛЮЧАЕМ СМЕШИВАНИЕ
+        RenderSystem.defaultBlendFunc();  // Стандартный режим смешивания (src alpha, 1-src alpha)
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 0.7f);
+        poseStack.pushPose();
+        poseStack.scale(0.51f, 0.51f, 0f);
+        poseStack.translate(354f, 330f, 0f);
+        guiGraphics.blit(COMPASS, triX, triY, 0, 0, 128, 128, 128, 128);
+        poseStack.popPose();
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        RenderSystem.disableBlend();
+
+    }
+    private static void renderDynamicCompassSelfRot(GuiGraphics guiGraphics, float yaw, int x, int y, int screenWidth) {
+        PoseStack poseStack = guiGraphics.pose();
+        poseStack.pushPose();
+        poseStack.translate((x + COMPASS_SIZE/2f)-15, (y + COMPASS_SIZE/2f)+10, 0);
+        String[] directions = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+        int[] colors = {0x00AAFF, 0x000000, 0x000000, 0x000000,
+                0xFF0000, 0x000000, 0x000000, 0x000000};
+        float radius = 25f; // Радиус круга
+        float scale = 0.9f; // Масштаб текста
+
+        // Плавное вращение (можно добавить интерполяцию для анимации)
+        float smoothYaw = yaw; // Здесь можно добавить плавную интерполяцию
+
+        // Рисуем направления
+        for (int i = 0; i < directions.length; i++) {
+            float angle = i * 45f - smoothYaw;
+            float rad = (float)Math.toRadians(angle);
+
+            // Плавное изменение размера в зависимости от положения
+            float distanceFactor = 1.0f - Math.abs(angle % 90 - 45) / 45f;
+            float currentScale = scale * (0.7f + 0.3f * distanceFactor);
+
+            // Позиция с учетом перспективы
+            float dx = (float)Math.sin(rad) * radius;
+            float dy = (float)Math.cos(rad) * radius;
+
+            // Эффект "выдвижения" ближайших элементов
+            float zOffset = 1.0f + 0.5f * distanceFactor;
+
+            poseStack.pushPose();
+            poseStack.translate(dx, -dy, 0);
+
+            String dir = directions[i];
+            int textWidth = mc.font.width(dir);
+            guiGraphics.drawString(mc.font, Component.literal(dir),
+                    -textWidth/2, -4, colors[i], true);
+            poseStack.popPose();
+
+
+
+        }
+
 
         poseStack.popPose();
     }
+    private static void drawCircle(PoseStack poseStack, int centerX, int centerY, int radius, int argbColor) {
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
 
+        float a = ((argbColor >> 24) & 0xFF) / 255.0f;
+        float r = ((argbColor >> 16) & 0xFF) / 255.0f;
+        float g = ((argbColor >> 8) & 0xFF) / 255.0f;
+        float b = (argbColor & 0xFF) / 255.0f;
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+
+        buffer.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f matrix = poseStack.last().pose();
+
+        // Центральная точка
+        buffer.vertex(matrix, centerX, centerY, 0).color(r, g, b, a).endVertex();
+
+        int segments = 64;
+        for (int i = 0; i <= segments; i++) {
+            double angle = 2 * Math.PI * i / segments;
+            float x = centerX + (float) (Math.cos(angle) * radius);
+            float y = centerY + (float) (Math.sin(angle) * radius);
+            buffer.vertex(matrix, x, y, 0).color(r, g, b, a).endVertex();
+        }
+
+        tesselator.end();
+
+
+        RenderSystem.disableBlend();
+    }
     private static void drawRightAlignedText(GuiGraphics guiGraphics, String text, int rightEdgeX, int y, int color) {
         int textWidth = mc.font.width(text);
         guiGraphics.drawString(mc.font, Component.literal(text), rightEdgeX - textWidth, y, color);
@@ -108,15 +205,14 @@ public class DroneHUD {
         // Нормализуем угол от 0 до 360
         yaw = (yaw % 360 + 360) % 360;
 
-        // Определяем направление
-        if (yaw >= 337.5 || yaw < 22.5) return "S";
-        else if (yaw >= 22.5 && yaw < 67.5) return "SW";
-        else if (yaw >= 67.5 && yaw < 112.5) return "W";
-        else if (yaw >= 112.5 && yaw < 157.5) return "NW";
-        else if (yaw >= 157.5 && yaw < 202.5) return "N";
-        else if (yaw >= 202.5 && yaw < 247.5) return "NE";
-        else if (yaw >= 247.5 && yaw < 292.5) return "E";
-        else return "SE";
+        if (yaw >= 337.5 || yaw < 22.5) return "§bS";
+        else if (yaw >= 22.5 && yaw < 67.5) return "§0SW";
+        else if (yaw >= 67.5 && yaw < 112.5) return "§0W";
+        else if (yaw >= 112.5 && yaw < 157.5) return "§0NW";
+        else if (yaw >= 157.5 && yaw < 202.5) return "§cN";
+        else if (yaw >= 202.5 && yaw < 247.5) return "§0NE";
+        else if (yaw >= 247.5 && yaw < 292.5) return "§0E";
+        else return "§0SE";
     }
     private static float calculateHeightAboveGround(DroneEntity drone) {
         // Начинаем проверку от позиции дрона вниз

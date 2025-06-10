@@ -1,4 +1,4 @@
-package ru.tesmio.drone.event;
+package ru.tesmio.drone.drone.sync;
 
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -13,5 +13,6 @@ public class DroneEvent {
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(Core.DRONE.get(), DroneEntity.createAttributes().build());
+
     }
 }

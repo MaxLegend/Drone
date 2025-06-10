@@ -18,16 +18,18 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import ru.tesmio.drone.drone.DroneEntity;
-import ru.tesmio.drone.droneold.DroneItem;
+import ru.tesmio.drone.drone.DroneItem;
 
-import ru.tesmio.drone.droneold.RemoteItem;
+import ru.tesmio.drone.drone.RemoteItem;
 
 import ru.tesmio.drone.packets.*;
+
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Core.MODID)
 public class Core {
-
+    //TODO: DefferedRegister вынести все в один класс. Вынести в отдельный класс регистрацию предметов и сущностей. Сделать свою вкладку
+    //
     public static final String MODID = "drone";
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
@@ -38,6 +40,7 @@ public class Core {
                                     .updateInterval(1)
                                     .canSpawnFarFromPlayer()
                                     .build("drone_entity"));
+
     public static RegistryObject<Item> ITEM_DRONE = ITEMS.register("drone_item", () -> new DroneItem(new Item.Properties()));
     public static RegistryObject<Item> ITEM_REMOTE = ITEMS.register("remote_item", () -> new RemoteItem(new Item.Properties()));
 
@@ -65,6 +68,7 @@ public class Core {
             if (event.getTabKey() == CreativeModeTabs.REDSTONE_BLOCKS) {
                 event.accept(ITEM_DRONE);
                 event.accept(ITEM_REMOTE);
+
             }
     }
 

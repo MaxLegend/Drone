@@ -1,4 +1,4 @@
-package ru.tesmio.drone.droneold;
+package ru.tesmio.drone.drone.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -19,9 +19,39 @@ public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
     }
     @Override
     public void render(DroneEntity drone, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        if (drone.isLinked() && !drone.isInWater()) {
+            // ageInTicks — можно взять как totalTicks + partialTicks
+            float ageInTicks = drone.tickCount + partialTicks;
+
+            // Вращение пропеллеров
+            this.model.prop1.yRot = ageInTicks * 2f;
+            this.model.prop2.yRot = ageInTicks * -2f;
+            this.model.prop3.yRot = ageInTicks * -2f;
+            this.model.prop4.yRot = ageInTicks * 2f;
+
+            // «Плавание» дрона
+            float hoverAmplitude = 0.02f;
+            float hoverSpeed = 0.1f;
+            float hoverX = Mth.sin(ageInTicks * hoverSpeed) * hoverAmplitude;
+            float hoverZ = Mth.cos(ageInTicks * hoverSpeed) * hoverAmplitude;
+            float lerpFactor = 0.02f;
+
+            // Интерполируем к нужным углам наклона
+            this.model.drone.xRot = Mth.lerp(lerpFactor, this.model.drone.xRot, hoverX);
+            this.model.drone.zRot = Mth.lerp(lerpFactor, this.model.drone.zRot, hoverZ);
+        } else {
+            // Если пульт не привязан — сбрасываем повороты, чтобы модель не «висела» в воздухе
+            this.model.prop1.yRot = 0;
+            this.model.prop2.yRot = 0;
+            this.model.prop3.yRot = 0;
+            this.model.prop4.yRot = 0;
+            this.model.drone.xRot = 0;
+            this.model.drone.zRot = 0;
+        }
         super.render(drone, entityYaw, partialTicks, poseStack, buffer, packedLight);
 
     }
+
     @Override
     protected void setupRotations(DroneEntity drone, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTicks) {
         super.setupRotations(drone, poseStack, ageInTicks, rotationYaw, partialTicks);
@@ -61,6 +91,7 @@ public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
             poseStack.mulPose(Axis.ZP.rotation(-tiltZ));
             poseStack.mulPose(Axis.XP.rotation(tiltX));
         }
+
     }
     @Override
     public ResourceLocation getTextureLocation(DroneEntity entity) {

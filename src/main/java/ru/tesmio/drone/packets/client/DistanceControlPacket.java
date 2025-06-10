@@ -4,16 +4,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.packets.PacketClientHandler;
 
 
 import java.util.function.Supplier;
 
 public class DistanceControlPacket {
-    private final int droneId;
-    private float simChunks;
-    private float viewChunks;
+    public final int droneId;
+    public float simChunks;
+    public float viewChunks;
     public DistanceControlPacket(float simChunks, float viewChunks, int droneId) {
         this.simChunks = simChunks;
         this.viewChunks = viewChunks;
@@ -34,15 +37,7 @@ public class DistanceControlPacket {
     }
 
     public static void handle(DistanceControlPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            Level level = Minecraft.getInstance().level;
-            if (level == null) return;
-
-            Entity entity = level.getEntity(msg.droneId);
-            if (entity instanceof DroneEntity drone) {
-                drone.syncViewAndSimDistance(msg.viewChunks, msg.simChunks);
-            }
-        });
+        ctx.get().enqueueWork(() -> PacketClientHandler.handleDistanceControlPacket(msg));
         ctx.get().setPacketHandled(true);
     }
 }
