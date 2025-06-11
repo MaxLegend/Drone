@@ -21,8 +21,6 @@ import ru.tesmio.drone.packets.server.*;
 
 import static ru.tesmio.drone.drone.control.DroneController.*;
 
-//убрать пересадку - если в режиме полета дрона тыкнуть по другому дрону, пульт перепривяжется.
-//иногда проскакивают ультразначения углов наклона и поворота, разобраться
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DroneClientEvent {
     static Minecraft mc = Minecraft.getInstance();
@@ -30,7 +28,6 @@ public class DroneClientEvent {
 
     @SubscribeEvent
     public static void onCameraZoom(ViewportEvent.ComputeFov event) {
-        Minecraft mc = Minecraft.getInstance();
         if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
         double baseFov = event.getFOV();
         double zoomFov = baseFov * drone.getZoom();
@@ -38,15 +35,11 @@ public class DroneClientEvent {
     }
     @SubscribeEvent
     public static void setupViewport(ViewportEvent.ComputeCameraAngles event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
-
+        if (!(mc.getCameraEntity() instanceof DroneEntity drone)) { return; }
             float partialTicks = mc.getFrameTime();
             float interpolatedYaw = Mth.lerp(partialTicks, drone.prevYaw, drone.getDroneYaw());
             float interpolatedPitch = Mth.lerp(partialTicks, drone.prevPitch, drone.getDronePitch());
             float interpolatedRoll = Mth.lerp(partialTicks, drone.prevRoll, drone.getDroneRoll());
-            //   if (drone.level().isClientSide) System.out.println("TICK IS " + drone.tickCount +" CLIENT yaw " + drone.getDroneYaw() + " pitch " + drone.getDronePitch() + " roll " + drone.getDroneRoll());
-
             float smoothedRoll = interpolatedRoll * 0.8f;
         if (mc.options.getCameraType().isFirstPerson()) {
             event.setRoll(-smoothedRoll);
@@ -57,8 +50,6 @@ public class DroneClientEvent {
             drone.setDroneYaw(interpolatedYaw);
             event.setRoll(-smoothedRoll);
         }
-
-
     }
 
     @SubscribeEvent
@@ -67,15 +58,13 @@ public class DroneClientEvent {
         if(mc.getCameraEntity() instanceof DroneEntity) drone = (DroneEntity) mc.getCameraEntity();
         else return;
         if (event.phase != TickEvent.Phase.END) return;
-        stopPlayer(mc.player);
+        freezePlayer(mc.player);
         if (!guiOpen) {
-                moveDrone(drone);
-                turnDrone(drone);
-
+            moveDrone(drone);
+            turnDrone(drone);
             PacketSystem.CHANNEL.sendToServer(new DroneViewPacket(drone.getUUID(), drone.getDroneYaw(), drone.getDronePitch(), drone.getDroneRoll()));
-
         }
-        exitControl();
+        stopControl();
     }
 
     @SubscribeEvent
@@ -90,21 +79,7 @@ public class DroneClientEvent {
     }
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
-        if (FLIGHT_MODE_KEY.consumeClick()) {
-            if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneFlightModeServerPacket.sendToServer(drone.getUUID());
-            }
-        }
-        if (STAB_MODE_KEY.consumeClick()) {
-            if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneStabModeServerPacket.sendToServer(drone.getUUID());
-            }
-        }
-        if (ZOOM_MODE_KEY.consumeClick()) {
-            if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneZoomModeServerPacket.sendToServer(drone.getUUID());
-            }
-        }
+        useKey();
     }
 }
 

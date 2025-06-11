@@ -28,7 +28,8 @@ import ru.tesmio.drone.packets.*;
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Core.MODID)
 public class Core {
-    //TODO: DefferedRegister вынести все в один класс. Вынести в отдельный класс регистрацию предметов и сущностей. Сделать свою вкладку
+    //TODO: DefferedRegister вынести все в один класс.
+    // Вынести в отдельный класс регистрацию предметов и сущностей. Сделать свою вкладку
     //
     public static final String MODID = "drone";
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MODID);

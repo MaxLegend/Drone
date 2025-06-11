@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.settings.KeyConflictContext;
@@ -11,8 +12,7 @@ import org.lwjgl.glfw.GLFW;
 
 import ru.tesmio.drone.drone.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
-import ru.tesmio.drone.packets.server.DroneMovePacket;
-import ru.tesmio.drone.packets.server.DroneViewPacket;
+import ru.tesmio.drone.packets.server.*;
 
 //TODO: Чистка кода, стилизация, комментирование
 public class DroneController {
@@ -53,7 +53,7 @@ public class DroneController {
     private static final float ROLL_SPEED = 0.15f;
     private static final float DAMPING = 0.4f;
 
-    public static void stopPlayer(Player player) {
+    public static void freezePlayer(Player player) {
         if (player != null) {
             player.setDeltaMovement(Vec3.ZERO);
             player.zza = 0;
@@ -61,10 +61,9 @@ public class DroneController {
             player.yya = 0;
             player.setShiftKeyDown(false);
             player.setSprinting(false);
-
         }
     }
-    public static void exitControl() {
+    public static void stopControl() {
         if (EXIT_CONTROL_KEY.consumeClick()) {
             mc.setCameraEntity(mc.player);
             if (mouseGrabbed) {
@@ -73,7 +72,23 @@ public class DroneController {
             }
         }
     }
-
+    public static void useKey() {
+        if (FLIGHT_MODE_KEY.consumeClick()) {
+            if(mc.getCameraEntity() instanceof DroneEntity drone) {
+                DroneFlightModeServerPacket.sendToServer(drone.getUUID());
+            }
+        }
+        if (STAB_MODE_KEY.consumeClick()) {
+            if(mc.getCameraEntity() instanceof DroneEntity drone) {
+                DroneStabModeServerPacket.sendToServer(drone.getUUID());
+            }
+        }
+        if (ZOOM_MODE_KEY.consumeClick()) {
+            if(mc.getCameraEntity() instanceof DroneEntity drone) {
+                DroneZoomModeServerPacket.sendToServer(drone.getUUID());
+            }
+        }
+    }
     public static void moveDrone(DroneEntity drone) {
         Vec3 movement = Vec3.ZERO;
         double targetSpeed = 0.0;
