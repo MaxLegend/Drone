@@ -23,9 +23,10 @@ import ru.tesmio.drone.drone.quadcopter.DroneItem;
 import ru.tesmio.drone.drone.quadcopter.RemoteItem;
 
 import ru.tesmio.drone.packets.*;
+import ru.tesmio.drone.shader.RenderEntityMask;
 
+import static ru.tesmio.drone.shader.RenderEntityMask.initRenderTargets;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(Core.MODID)
 public class Core {
     //TODO: DefferedRegister вынести все в один класс.
@@ -85,7 +86,7 @@ public class Core {
 
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
-
+            RenderEntityMask.initRenderTargets();
         }
     }
 }

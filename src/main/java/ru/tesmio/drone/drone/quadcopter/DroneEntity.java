@@ -128,7 +128,12 @@ public class DroneEntity extends BaseDroneEntity {
         this.entityData.define(DATA_ZOOM_MODE, ZoomMode.DEF.name());
         this.entityData.define(DATA_VISION_MODE, VisionMode.NORMAL.name());
     }
-
+    public float getYRot() {
+        return this.droneYaw;
+    }
+    public float getXRot() {
+        return this.dronePitch;
+    }
     /**DAMAGE*/
     @Override
     public boolean hurt(DamageSource source, float amount) {
@@ -293,6 +298,7 @@ public class DroneEntity extends BaseDroneEntity {
                   .add(Attributes.MOVEMENT_SPEED, 4.0)
                   .add(Attributes.MAX_HEALTH, 20.0);
     }
+
 
     /** STANDART SETTERS AND GETTER*/
     @Override

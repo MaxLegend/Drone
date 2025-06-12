@@ -11,9 +11,11 @@ import net.minecraftforge.fml.common.Mod;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.server.*;
+import ru.tesmio.drone.shader.RenderEntityMask;
 
 import static ru.tesmio.drone.drone.quadcopter.control.DroneController.*;
 
+//TODO: надо добавить кнопки в меню игры
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DroneClientEvent {
     static Minecraft mc = Minecraft.getInstance();
@@ -50,7 +52,11 @@ public class DroneClientEvent {
         DroneEntity drone;
         if(mc.getCameraEntity() instanceof DroneEntity) drone = (DroneEntity) mc.getCameraEntity();
         else return;
-        if (event.phase != TickEvent.Phase.END) return;
+        if (event.phase != TickEvent.Phase.END) {
+
+            RenderEntityMask.initRenderTargets();
+            return;
+        }
         freezePlayer(mc.player);
         if (!guiOpen) {
             moveDrone(drone);
@@ -74,7 +80,14 @@ public class DroneClientEvent {
     public static void onKeyInput(InputEvent.Key event) {
         useKey();
     }
-
-
+//    @SubscribeEvent
+//    public static void registerKeyBindings(final RegisterKeyMappingsEvent event) {
+//        event.register(EXIT_CONTROL_KEY);
+//        event.register(CTRL_KEY);
+//        event.register(FLIGHT_MODE_KEY);
+//        event.register(STAB_MODE_KEY);
+//        event.register(VISION_MODE_KEY);
+//        event.register(ZOOM_MODE_KEY);
+//    }
 }
 

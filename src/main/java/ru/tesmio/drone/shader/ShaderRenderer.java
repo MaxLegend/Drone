@@ -1,28 +1,44 @@
 package ru.tesmio.drone.shader;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
+import static ru.tesmio.drone.shader.RenderEntityMask.*;
 import static ru.tesmio.drone.shader.ShaderRegistry.*;
 
 @Mod.EventBusSubscriber(modid = Core.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ShaderRenderer {
     static Minecraft mc = Minecraft.getInstance();
+
+
+
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
         if (MONOCHROME == null) return;
+        Minecraft mc = Minecraft.getInstance();
+        RenderTarget mainTarget = mc.getMainRenderTarget();
+
+
         DroneEntity drone;
         if(mc.getCameraEntity() instanceof DroneEntity) {
             drone = (DroneEntity) mc.getCameraEntity();
@@ -31,34 +47,32 @@ public class ShaderRenderer {
                     return;
                 }
                 case MONOCHROME -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    RenderTarget mainTarget = mc.getMainRenderTarget();
+
                     RenderSystem.setShader(() -> MONOCHROME);
                     MONOCHROME.setSampler("DiffuseSampler", mainTarget.getColorTextureId());
                     renderFullScreen();
                     RenderSystem.setShader(() -> null);
                 }
                 case THERMOCHROME -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    RenderTarget mainTarget = mc.getMainRenderTarget();
+
                     RenderSystem.setShader(() -> THERMOCHROME);
                     THERMOCHROME.setSampler("DiffuseSampler", mainTarget.getColorTextureId());
                     renderFullScreen();
                     RenderSystem.setShader(() -> null);
                 }
                 case GREENCHROME -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    RenderTarget mainTarget = mc.getMainRenderTarget();
+
                     RenderSystem.setShader(() -> GREENCHROME);
                     GREENCHROME.setSampler("DiffuseSampler", mainTarget.getColorTextureId());
                     renderFullScreen();
                     RenderSystem.setShader(() -> null);
                 }
                 case THERMAL -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    RenderTarget mainTarget = mc.getMainRenderTarget();
+
+                    renderEntityMask(event);
                     RenderSystem.setShader(() -> THERMAL);
                     THERMAL.setSampler("DiffuseSampler", mainTarget.getColorTextureId());
+                    THERMAL.setSampler("EntityMask", RenderEntityMask.thermalMaskTarget.getColorTextureId());
                     renderFullScreen();
                     RenderSystem.setShader(() -> null);
                 }

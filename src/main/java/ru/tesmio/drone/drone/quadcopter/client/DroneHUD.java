@@ -17,7 +17,7 @@ import org.joml.Matrix4f;
 import ru.tesmio.drone.Core;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
-//TODO: Чистка кода и стилизация. Компас смотрится неорганично, заменить на полупрозрачный рендер круга.
+//TODO:
 public class DroneHUD {
     private static final ResourceLocation SIGNAL_LEVEL = new ResourceLocation(Core.MODID, "textures/gui/signal_bars.png");
     private static final ResourceLocation SIGNAL_ICON = new ResourceLocation(Core.MODID, "textures/gui/signal_icon.png");

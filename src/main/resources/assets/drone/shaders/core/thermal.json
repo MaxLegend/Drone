@@ -2,7 +2,8 @@
   "vertex": "drone:thermal",
   "fragment": "drone:thermal",
   "samplers": [
-    { "name": "DiffuseSampler", "target": "minecraft:main" }
+    { "name": "DiffuseSampler", "target": "minecraft:main" },
+    { "name": "EntityMask" }
   ],
   "attributes": ["Position", "UV0"],
   "uniforms": []
