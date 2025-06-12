@@ -11,10 +11,18 @@ import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.GlowSquid;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.animal.*;
+import net.minecraft.world.entity.animal.allay.Allay;
+import net.minecraft.world.entity.animal.frog.Frog;
+import net.minecraft.world.entity.animal.frog.Tadpole;
+import net.minecraft.world.entity.animal.horse.SkeletonHorse;
+import net.minecraft.world.entity.animal.horse.ZombieHorse;
+import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.entity.monster.hoglin.Hoglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -117,6 +125,8 @@ public class RenderEntityMask  {
 
             for (LivingEntity entity : entities) {
                 if (entity instanceof DroneEntity) continue;
+                if(coldBloodEntities(entity)) continue; //TODO: добавить режим хладовизора - улучшение 3
+
                 entityRenderer.setRenderShadow(false);
                 renderEntityWithRenderer(entity, poseStack, bufferSource, entityRenderer, event.getPartialTick(), cameraPos);
                 entityRenderer.setRenderShadow(true);
@@ -128,11 +138,18 @@ public class RenderEntityMask  {
         currentTarget.bindWrite(true);
 
     }
-    private static Entity skipEntities(Entity entity) {
-        if (entity instanceof Monster && (!(entity instanceof Hoglin) || (entity instanceof Piglin))) {
-            return entity;
-        }
-        return entity;
+    private static boolean coldBloodEntities(Entity entity) {
+        return (entity instanceof Hoglin || entity instanceof Piglin || entity instanceof Bee || entity instanceof CaveSpider
+                || entity instanceof Cod || entity instanceof Creeper || entity instanceof Spider
+                || entity instanceof Drowned || entity instanceof ElderGuardian || entity instanceof Endermite
+                || entity instanceof Ghast || entity instanceof Guardian || entity instanceof Frog
+                || entity instanceof Squid || entity instanceof GlowSquid || entity instanceof Husk
+                || entity instanceof IronGolem || entity instanceof Phantom || entity instanceof Pufferfish || entity instanceof Slime
+                || entity instanceof Skeleton || entity instanceof SkeletonHorse || entity instanceof Silverfish || entity instanceof Shulker
+                || entity instanceof Salmon || entity instanceof SnowGolem || entity instanceof Stray || entity instanceof Tadpole
+                || entity instanceof Warden || entity instanceof TropicalFish || entity instanceof Turtle || entity instanceof Vex
+                || entity instanceof Allay || entity instanceof WitherSkeleton || entity instanceof Zombie || entity instanceof ZombieVillager
+                || entity instanceof ZombieHorse || entity instanceof ZombifiedPiglin || entity instanceof Zoglin);
     }
     private static void renderEntityWithRenderer(LivingEntity entity, PoseStack poseStack,
             MultiBufferSource bufferSource, EntityRenderDispatcher entityRenderer,
