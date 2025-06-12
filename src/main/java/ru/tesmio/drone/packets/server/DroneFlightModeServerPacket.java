@@ -4,10 +4,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
 
 import java.util.UUID;

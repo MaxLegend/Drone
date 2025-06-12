@@ -1,10 +1,10 @@
-package ru.tesmio.drone.drone.sync;
+package ru.tesmio.drone.drone.quadcopter.sync;
 
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import ru.tesmio.drone.Core;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 
 @Mod.EventBusSubscriber(modid = Core.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)

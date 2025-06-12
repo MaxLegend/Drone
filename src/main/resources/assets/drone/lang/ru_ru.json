@@ -20,7 +20,14 @@
   "zmode.x8": "Увеличение §c8x",
   "zmode.spec_zoom": "§4Ультра",
   "drone_message.warn_range": "§eНизкий уровень сигнала!",
-  "drone_message.out_of_range": "§cСигнал потерян!"
+  "drone_message.out_of_range": "§cСигнал потерян!",
+  "vmode.normal": "§aОбычный",
+  "vmode.monochrome": "§fМонохромный",
+  "vmode.thermochrome": "§cТермохромный",
+  "vmode.greenchrome": "§2Цветохромный",
+  "vmode.thermal": "§4Тепловизор",
+  "item.drone.drone_item": "§5Квадрокоптер «Tesmio-1»",
+  "item.drone.remote_item": "§5Пульт управления «Tesmio-1»"
 
 
 }

@@ -1,0 +1,9 @@
+{
+  "vertex": "drone:monochrome",
+  "fragment": "drone:monochrome",
+  "samplers": [
+    { "name": "DiffuseSampler", "target": "minecraft:main" }
+  ],
+  "attributes": ["Position", "UV0"],
+  "uniforms": []
+}

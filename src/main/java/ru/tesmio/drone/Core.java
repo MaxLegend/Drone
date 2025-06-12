@@ -17,10 +17,10 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import ru.tesmio.drone.drone.DroneEntity;
-import ru.tesmio.drone.drone.DroneItem;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneItem;
 
-import ru.tesmio.drone.drone.RemoteItem;
+import ru.tesmio.drone.drone.quadcopter.RemoteItem;
 
 import ru.tesmio.drone.packets.*;
 

@@ -1,25 +1,18 @@
-package ru.tesmio.drone.drone.client;
+package ru.tesmio.drone.drone.quadcopter.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import net.minecraftforge.network.PacketDistributor;
-import org.lwjgl.opengl.GL11;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
-import ru.tesmio.drone.packets.client.DroneDeathPacket;
 import ru.tesmio.drone.packets.server.*;
 
-import static ru.tesmio.drone.drone.control.DroneController.*;
+import static ru.tesmio.drone.drone.quadcopter.control.DroneController.*;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DroneClientEvent {
@@ -81,5 +74,7 @@ public class DroneClientEvent {
     public static void onKeyInput(InputEvent.Key event) {
         useKey();
     }
+
+
 }
 

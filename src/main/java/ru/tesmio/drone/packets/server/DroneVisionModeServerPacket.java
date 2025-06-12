@@ -11,26 +11,26 @@ import ru.tesmio.drone.packets.PacketSystem;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class DroneZoomModeServerPacket {
+public class DroneVisionModeServerPacket {
     private final UUID droneId;
-    public DroneZoomModeServerPacket(UUID droneId) {
+    public DroneVisionModeServerPacket(UUID droneId) {
         this.droneId = droneId;
     }
 
     public static void sendToServer(UUID droneId) {
-        PacketSystem.CHANNEL.sendToServer(new DroneZoomModeServerPacket(droneId));
+        PacketSystem.CHANNEL.sendToServer(new DroneVisionModeServerPacket(droneId));
     }
 
-    public static void encode(DroneZoomModeServerPacket msg, FriendlyByteBuf buf) {
+    public static void encode(DroneVisionModeServerPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.droneId);
     }
 
-    public static DroneZoomModeServerPacket decode(FriendlyByteBuf buf) {
+    public static DroneVisionModeServerPacket decode(FriendlyByteBuf buf) {
         UUID droneId = buf.readUUID();
-        return new DroneZoomModeServerPacket(droneId);
+        return new DroneVisionModeServerPacket(droneId);
     }
 
-    public static void handle(DroneZoomModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(DroneVisionModeServerPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
 
             ServerPlayer player = ctx.get().getSender();
@@ -41,7 +41,7 @@ public class DroneZoomModeServerPacket {
 
             if (entity instanceof DroneEntity drone) {
                 if (drone.getControllerUUID() != null && drone.getControllerUUID().equals(player.getUUID())) {
-                    drone.cycleZoomMode();
+                    drone.cycleVisionMode();
                 }
             }
 

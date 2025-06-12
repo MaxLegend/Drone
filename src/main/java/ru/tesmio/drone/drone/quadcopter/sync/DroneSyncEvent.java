@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone.sync;
+package ru.tesmio.drone.drone.quadcopter.sync;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -7,9 +7,9 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
-import ru.tesmio.drone.drone.RemoteItem;
+import ru.tesmio.drone.drone.quadcopter.RemoteItem;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.DistanceControlPacket;
 import ru.tesmio.drone.packets.client.DroneControllerPacket;
@@ -39,7 +39,7 @@ public class DroneSyncEvent {
                                               .orElse(null);
 
                     if (drone != null) {
-
+                    System.out.println("onPlayerLogin drone.getUUID() " + drone.getUUID() + "  " + player.getUUID());
                         PacketSystem.CHANNEL.send(
                                 PacketDistributor.PLAYER.with(() -> player),
                                 new DroneControllerPacket(drone.getUUID(), player.getUUID())

@@ -1,13 +1,10 @@
-package ru.tesmio.drone.drone.client;
+package ru.tesmio.drone.drone.quadcopter.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -18,7 +15,7 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import ru.tesmio.drone.Core;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 //TODO: Чистка кода и стилизация. Компас смотрится неорганично, заменить на полупрозрачный рендер круга.
 public class DroneHUD {
@@ -42,7 +39,8 @@ public class DroneHUD {
         poseStack.scale(1.1f, 1.1f, 1.0f);
         guiGraphics.drawString(mc.font,  drone.getFlightMode().getName(), 10, 10, 0xFFFFFF);
         guiGraphics.drawString(mc.font, drone.getStabMode().getName(), 130, 10, 0xFFFFFF);
-        guiGraphics.drawString(mc.font,  drone.getZoomMode().getName(), 260, 10, 0xFFFFFF);
+        guiGraphics.drawString(mc.font,  drone.getZoomMode().getName(), 220, 10, 0xFFFFFF);
+        guiGraphics.drawString(mc.font,  drone.getVisionMode().getName(), 280, 10, 0xFFFFFF);
         BlockPos pos = drone.blockPosition();
 
         guiGraphics.drawString(mc.font, Component.literal(   "GPS: " + pos.getX() +" | "+  pos.getY() +" | "+  pos.getZ() ), screenWidth - 470, 27, 0xFFFFFF);

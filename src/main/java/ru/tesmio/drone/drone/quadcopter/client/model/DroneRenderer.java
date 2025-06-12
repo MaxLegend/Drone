@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone.client;
+package ru.tesmio.drone.drone.quadcopter.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import ru.tesmio.drone.Core;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Core.MODID, "textures/entity/drone.png");

@@ -20,5 +20,12 @@
   "zmode.x8": "Zoom §c8x",
   "zmode.spec_zoom": "§4Extra Zoom",
   "drone_message.warn_range": "§eLow signal level!",
-  "drone_message.out_of_range": "§cThe signal is lost!"
+  "drone_message.out_of_range": "§cThe signal is lost!",
+  "vmode.normal": "§aNormal",
+  "vmode.monochrome": "§fMonochrome",
+  "vmode.thermochrome": "§cThermochrome",
+  "vmode.greenchrome": "§2Greenchrome",
+  "vmode.thermal": "§4Thermal Imager",
+  "item.drone.drone_item": "§5Quadcopter «Tesmio One»",
+  "item.drone.remote_item": "§5Remote «Tesmio One»"
 }

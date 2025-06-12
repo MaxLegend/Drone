@@ -8,10 +8,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.client.*;
 
-import static ru.tesmio.drone.drone.control.DroneController.mouseGrabbed;
+import static ru.tesmio.drone.drone.quadcopter.control.DroneController.mouseGrabbed;
 @OnlyIn(Dist.CLIENT)
 public class PacketClientHandler {
     static Minecraft mc = net.minecraft.client.Minecraft.getInstance();
@@ -33,7 +33,7 @@ public class PacketClientHandler {
         if (level == null) return;
         Entity e = level.getEntity(msg.droneId);
         if (e instanceof DroneEntity drone) {
-            drone.applyClientView(msg.yaw, msg.pitch, msg.roll);
+            drone.applyView(msg.yaw, msg.pitch, msg.roll);
         }
     }
     public static void handleDroneControllerPacket(DroneControllerPacket msg) {
@@ -55,6 +55,32 @@ public class PacketClientHandler {
             drone.syncViewAndSimDistance(msg.viewChunks, msg.simChunks);
         }
     }
+    public static void handleDroneModesSyncPacket(DroneModesSyncPacket msg) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+
+        Entity entity = mc.level.getEntity(msg.droneUUID.hashCode()); // Попробуем найти по ID
+        if (entity == null) {
+            // Альтернативный поиск по UUID
+            for (Entity e : mc.level.entitiesForRendering()) {
+                if (e instanceof DroneEntity drone && msg.droneUUID.equals(drone.getUUID())) {
+                    entity = e;
+                    break;
+                }
+            }
+        }
+
+        if (entity instanceof DroneEntity drone) {
+            drone.setFlightMode(msg.flightMode);
+            drone.setStabMode(msg.stabMode);
+            drone.setZoomMode(msg.zoomMode);
+        }
+    }
+    public static void handleDroneVisionModePacket(DroneVisionModePacket msg) {
+        if (mc.player != null && mc.level != null) {
+   //         mc.player.displayClientMessage(Component.literal(msg.mode.name()), true);
+        }
+    }
     public static void handleDroneZoomModePacket(DroneZoomModePacket msg) {
         if (mc.player != null && mc.level != null) {
             mc.player.displayClientMessage(Component.literal(msg.mode.name()), true);
@@ -62,12 +88,12 @@ public class PacketClientHandler {
     }
     public static void handleDroneStabModePacket(DroneStabModePacket msg) {
         if (mc.player != null && mc.level != null) {
-            mc.player.displayClientMessage(msg.mode.getDisplayMode(), true);
+            // mc.player.displayClientMessage(msg.mode.name(), true);
         }
     }
     public static void handleDroneFlightModePacket(DroneFlightModePacket msg) {
         if (mc.player != null && mc.level != null) {
-            mc.player.displayClientMessage(msg.mode.getDisplayText(), true);
+      //      mc.player.displayClientMessage(msg.mode.getDisplayText(), true);
         }
     }
     public static void handleActionBarMessagePacket(ActionBarMessagePacket msg) {

@@ -1,16 +1,15 @@
-package ru.tesmio.drone.drone.control;
+package ru.tesmio.drone.drone.quadcopter.control;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.server.*;
 
@@ -40,6 +39,18 @@ public class DroneController {
             "key.drone.zoom_mode",
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_X,
+            "key.categories.drone"
+    );
+    public static final KeyMapping CTRL_KEY = new KeyMapping(
+            "key.drone.ctrl_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_LEFT_CONTROL,
+            "key.categories.drone"
+    );
+    public static final KeyMapping VISION_MODE_KEY = new KeyMapping(
+            "key.drone.vision_mode",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
             "key.categories.drone"
     );
     private static float currentYaw = 0;
@@ -88,12 +99,17 @@ public class DroneController {
                 DroneZoomModeServerPacket.sendToServer(drone.getUUID());
             }
         }
+        if (VISION_MODE_KEY.consumeClick()) {
+            if(mc.getCameraEntity() instanceof DroneEntity drone) {
+                DroneVisionModeServerPacket.sendToServer(drone.getUUID());
+            }
+        }
     }
     public static void moveDrone(DroneEntity drone) {
         Vec3 movement = Vec3.ZERO;
         double targetSpeed = 0.0;
         double baseSpeed = drone.getSpeed();
-        double acceleration = 0.01;
+        double acceleration = drone.acceleration;
 
         double yawRad = Math.toRadians(drone.getDroneYaw());
         double pitchRad = Math.toRadians(drone.getDronePitch());
@@ -185,7 +201,7 @@ public class DroneController {
             rollDrone(drone, movement, right, 45);
         }
 
-        drone.applyClientMovement(movement);
+        drone.applyMovement(movement);
         PacketSystem.CHANNEL.sendToServer(new DroneMovePacket(drone.getUUID(), movement));
 
     }
@@ -211,7 +227,7 @@ public class DroneController {
             currentYaw = (float) (yawVelocity * scale);
             currentPitch = (float) (pitchVelocity * scale);
             currentPitch = Mth.clamp(currentPitch, -45.0f, 90.0f);
-            drone.applyClientView(currentYaw,currentPitch,currentRoll);
+            drone.applyView(currentYaw,currentPitch,currentRoll);
 
         }
 

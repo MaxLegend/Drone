@@ -5,9 +5,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import ru.tesmio.drone.drone.DroneEntity;
+import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -45,7 +44,7 @@ public class DroneViewPacket {
 
             Entity e = ((ServerLevel) level).getEntity(pkt.droneId);
             if (e instanceof DroneEntity drone) {
-                drone.applyServerView(pkt.yaw, pkt.pitch, pkt.roll);
+                drone.applyView(pkt.yaw, pkt.pitch, pkt.roll);
             }
         });
         ctx.get().setPacketHandled(true);

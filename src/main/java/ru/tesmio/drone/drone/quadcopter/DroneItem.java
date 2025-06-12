@@ -1,4 +1,4 @@
-package ru.tesmio.drone.drone;
+package ru.tesmio.drone.drone.quadcopter;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;

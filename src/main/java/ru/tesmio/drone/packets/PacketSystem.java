@@ -70,5 +70,21 @@ public class PacketSystem {
                 DroneZoomModeServerPacket::encode,
                 DroneZoomModeServerPacket::decode,
                 DroneZoomModeServerPacket::handle);
+        CHANNEL.registerMessage(id++, DroneVisionModePacket.class,
+                DroneVisionModePacket::encode,
+                DroneVisionModePacket::decode,
+                DroneVisionModePacket::handle);
+        CHANNEL.registerMessage(id++, DroneVisionModeServerPacket.class,
+                DroneVisionModeServerPacket::encode,
+                DroneVisionModeServerPacket::decode,
+                DroneVisionModeServerPacket::handle);
+        CHANNEL.registerMessage(id++, DroneReconnectPacket.class,
+                DroneReconnectPacket::encode,
+                DroneReconnectPacket::decode,
+                DroneReconnectPacket::handle);
+        CHANNEL.registerMessage(id++, DroneModesSyncPacket.class,
+                DroneModesSyncPacket::encode,
+                DroneModesSyncPacket::decode,
+                DroneModesSyncPacket::handle);
     }
 }
