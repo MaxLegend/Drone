@@ -39,10 +39,10 @@ public class Dronecraft {
         bus.addListener(this::commonSetup);
         bus.addListener(this::onClientSetup);
         MinecraftForge.EVENT_BUS.register(this);
-        InitMenus.register(bus);
+
         InitEntity.register(bus);
         InitItems.register(bus);
-
+        InitMenus.register(bus);
     }
 
 

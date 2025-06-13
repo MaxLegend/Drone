@@ -2,6 +2,7 @@ package ru.tesmio.drone.drone.quadcopter;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -79,7 +80,17 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
         // Ранний выход для клиентской стороны или неосновной руки
         if (!level().isClientSide && hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()) {
 
-            NetworkHooks.openScreen( (ServerPlayer)player, this, buffer -> {
+            NetworkHooks.openScreen( (ServerPlayer)player, new MenuProvider() {
+                @Override
+                public Component getDisplayName() {
+                    return Component.literal("Drone Control"); // Можно любое имя GUI
+                }
+
+                @Override
+                public AbstractContainerMenu createMenu(int windowId, Inventory inv, Player player) {
+                    return new DroneEntityMenu(windowId, inv, DroneEntity.this);
+                }
+            }, buffer -> {
                 buffer.writeInt(this.getId());
             });
             return InteractionResult.CONSUME;
@@ -448,6 +459,10 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
     @Override
     public void clearContent() {
         this.clearChestVehicleContent();
+    }
+    @Override
+    public Component getDisplayName() {
+        return Component.literal("Drone Upgrades");
     }
 
     @Nullable

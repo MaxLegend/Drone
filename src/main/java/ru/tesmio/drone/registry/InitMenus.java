@@ -14,7 +14,7 @@ import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.drone.quadcopter.container.DroneEntityMenu;
 
 public class InitMenus {
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, Dronecraft.MODID);
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Dronecraft.MODID);
 
 //    public static final RegistryObject<MenuType<DroneEntityMenu>> DRONE_ENTITY_MENU =
 //            MENUS.register("drone_entity_menu", () -> IForgeMenuType.create(DroneEntityMenu::new));
@@ -25,7 +25,7 @@ public class InitMenus {
                         // читаем ID сущности
                         int entityId = buf.readVarInt();
                         Entity e = inv.player.level().getEntity(entityId);
-                        if (!(e instanceof ContainerEntity drone)) {
+                        if (!(e instanceof DroneEntity drone)) {
                             throw new IllegalStateException("Expected ContainerEntity, got " + e);
                         }
                         // создаём меню сразу с готовой сущностью
