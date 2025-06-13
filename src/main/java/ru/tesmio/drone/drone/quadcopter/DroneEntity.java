@@ -1,5 +1,6 @@
 package ru.tesmio.drone.drone.quadcopter;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -7,10 +8,13 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -18,23 +22,34 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.ContainerEntity;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
-import ru.tesmio.drone.Core;
+import org.jetbrains.annotations.Nullable;
+import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.drone.BaseDroneEntity;
+import ru.tesmio.drone.drone.quadcopter.container.DroneEntityMenu;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.*;
+import ru.tesmio.drone.registry.InitItems;
 
 
 //TODO: отвязка от пульта должна быть при покидании зоны, но не нужно постоянно держать getController.
 // предмет должен помнить текущий НБТ и при взаимодействии предметом надо отправлять пакет, который
 // будет проверять, можно ли соединится с этим дроном. И если можно, то он соединяется и опять
 // записывает в controllerUUID дрона информацию о том, кто управляет
-public class DroneEntity extends BaseDroneEntity {
-
+public class DroneEntity extends BaseDroneEntity implements ContainerEntity, MenuProvider {
+    public DroneEntity INSTANCE;
+    private NonNullList<ItemStack> items = NonNullList.withSize(10, ItemStack.EMPTY);
+    @Nullable
+    private ResourceLocation lootTable;
+    private long lootTableSeed;
     private static final EntityDataAccessor<String> DATA_FLIGHT_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_STAB_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_ZOOM_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
@@ -58,9 +73,17 @@ public class DroneEntity extends BaseDroneEntity {
         this.setNoGravity(false);
         this.setHealth(20.0f);
     }
+
     @Override
     public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
         // Ранний выход для клиентской стороны или неосновной руки
+        if (!level().isClientSide && hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()) {
+
+            NetworkHooks.openScreen( (ServerPlayer)player, this, buffer -> {
+                buffer.writeInt(this.getId());
+            });
+            return InteractionResult.CONSUME;
+        }
         if (hand != InteractionHand.MAIN_HAND || level().isClientSide) {
             return super.interactAt(player, vec, hand);
         }
@@ -84,7 +107,7 @@ public class DroneEntity extends BaseDroneEntity {
     }
 
     private void discardDrone() {
-        ItemStack droneItem = new ItemStack(Core.ITEM_DRONE.get());
+        ItemStack droneItem = new ItemStack(InitItems.ITEM_DRONE.get());
         level().addFreshEntity(new ItemEntity(level(), getX(), getY(), getZ(), droneItem));
         discard();
     }
@@ -99,7 +122,6 @@ public class DroneEntity extends BaseDroneEntity {
             return false;
         }
 
-        // Устанавливаем связь между дроном и пультом
         tag.putUUID("DroneUUID", getUUID());
         this.CONTROLLER_UUID = player.getUUID();
 
@@ -257,6 +279,7 @@ public class DroneEntity extends BaseDroneEntity {
         if (getControllerUUID() != null) {
             tag.putUUID("Controller", getControllerUUID());
         }
+        this.addChestVehicleSaveData(tag);
     }
 
     @Override
@@ -277,6 +300,7 @@ public class DroneEntity extends BaseDroneEntity {
         } else {
             this.setControllerUUID(null);
         }
+        this.readChestVehicleSaveData(tag);
     }
 
 
@@ -358,12 +382,77 @@ public class DroneEntity extends BaseDroneEntity {
     public void cycleStabMode() {
         cycleMode(this::getStabMode, this::setStabMode);
     }
-
     public void cycleZoomMode() {
         cycleMode(this::getZoomMode, this::setZoomMode);
     }
-
     public void cycleFlightMode() {
         cycleMode(this::getFlightMode, this::setFlightMode);
+    }
+
+
+
+    @Override
+    public void setLootTable(@Nullable ResourceLocation lootTable) {
+        this.lootTable = lootTable;
+    }
+
+    @Override
+    public void setLootTableSeed(long seed) {
+        this.lootTableSeed = seed;
+    }
+
+    @Override
+    public NonNullList<ItemStack> getItemStacks() {
+        return this.items;
+    }
+    @Override
+    public void clearItemStacks() {
+        this.items = NonNullList.withSize(10, ItemStack.EMPTY);
+    }
+
+    @Override
+    public int getContainerSize() {
+        return this.items.size();
+    }
+
+    @Override
+    public ItemStack getItem(int i) {
+        return null;
+    }
+
+    @Override
+    public ItemStack removeItem(int index, int count) {
+        return this.removeChestVehicleItem(index, count);
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int index) {
+        return this.removeChestVehicleItemNoUpdate(index);
+    }
+
+    @Override
+    public void setItem(int index, ItemStack stack) {
+        this.setChestVehicleItem(index, stack);
+    }
+
+    @Override
+    public void setChanged() {
+
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return this.isChestVehicleStillValid(player);
+    }
+
+    @Override
+    public void clearContent() {
+        this.clearChestVehicleContent();
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int windowId, Inventory playerInventory, Player player) {
+        return new DroneEntityMenu(windowId, playerInventory, this);
     }
 }

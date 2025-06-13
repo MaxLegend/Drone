@@ -14,14 +14,14 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import ru.tesmio.drone.Core;
+import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 //TODO:
 public class DroneHUD {
-    private static final ResourceLocation SIGNAL_LEVEL = new ResourceLocation(Core.MODID, "textures/gui/signal_bars.png");
-    private static final ResourceLocation SIGNAL_ICON = new ResourceLocation(Core.MODID, "textures/gui/signal_icon.png");
-    private static final ResourceLocation COMPASS = new ResourceLocation(Core.MODID, "textures/gui/compass.png");
+    private static final ResourceLocation SIGNAL_LEVEL = new ResourceLocation(Dronecraft.MODID, "textures/gui/signal_bars.png");
+    private static final ResourceLocation SIGNAL_ICON = new ResourceLocation(Dronecraft.MODID, "textures/gui/signal_icon.png");
+    private static final ResourceLocation COMPASS = new ResourceLocation(Dronecraft.MODID, "textures/gui/compass.png");
     private static final int COMPASS_SIZE = 64;
     static Minecraft mc = Minecraft.getInstance();
     static Font font = mc.font;

@@ -3,7 +3,7 @@ package ru.tesmio.drone.packets;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import ru.tesmio.drone.Core;
+import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.packets.client.*;
 import ru.tesmio.drone.packets.server.*;
 
@@ -15,7 +15,7 @@ import ru.tesmio.drone.packets.server.*;
 public class PacketSystem {
     private static int id = 0;
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(Core.MODID, "main"),
+            new ResourceLocation(Dronecraft.MODID, "main"),
             () -> "1.0",
             s -> true,
             s -> true

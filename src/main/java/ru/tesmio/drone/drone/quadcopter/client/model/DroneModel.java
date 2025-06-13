@@ -11,12 +11,12 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
-import ru.tesmio.drone.Core;
+import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 public class DroneModel extends EntityModel<DroneEntity> {
 	// This layer location should be baked with EntityRendererProvider.Context in the entity renderer and passed into this model's constructor
-	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Core.MODID, "drone_entity"), "main");
+	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(Dronecraft.MODID, "drone_entity"), "main");
 	public final ModelPart drone;
 	public final ModelPart body;
 	public final ModelPart prop1;
