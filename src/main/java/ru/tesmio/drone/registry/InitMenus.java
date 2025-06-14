@@ -14,11 +14,13 @@ import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.drone.quadcopter.container.DroneEntityMenu;
 
 public class InitMenus {
-    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Dronecraft.MODID);
-
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, Dronecraft.MODID);
+//    public static final DeferredRegister<MenuType<?>> MENUS =
+//            DeferredRegister.create(Registries.MENU, Dronecraft.MODID);
 //    public static final RegistryObject<MenuType<DroneEntityMenu>> DRONE_ENTITY_MENU =
 //            MENUS.register("drone_entity_menu", () -> IForgeMenuType.create(DroneEntityMenu::new));
-
+//public static final RegistryObject<MenuType<DroneEntityMenu>> CHEST_MOB_MENU =
+//        MENUS.register("chest_mob", () -> new MenuType<>(DroneEntityMenu::new));
     public static final RegistryObject<MenuType<DroneEntityMenu>> DRONE_ENTITY_MENU =
             MENUS.register("drone_entity_menu", () ->
                     IForgeMenuType.create((windowId, inv, buf) -> {

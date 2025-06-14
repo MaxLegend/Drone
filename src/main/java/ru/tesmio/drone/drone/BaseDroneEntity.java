@@ -17,7 +17,9 @@ import net.minecraftforge.network.PacketDistributor;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.DroneDeathPacket;
+import ru.tesmio.drone.registry.InitItems;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -27,7 +29,7 @@ import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
 public class BaseDroneEntity extends Mob {
     private static final EntityDataAccessor<Float> DATA_VIEW_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_SIM_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
-    private final KeyMapping modifierKey = CTRL_KEY;
+    protected static final KeyMapping modifierKey = CTRL_KEY;
     public final float AIR_FRICTION = 0.98f;
     public final float STAB_FRICTION  = 0.90f;
     public UUID CONTROLLER_UUID;
@@ -106,6 +108,7 @@ public class BaseDroneEntity extends Mob {
             this.discard();
         }
     }
+
     public <T extends Enum<T> & ICyclableEnum<T>> void cycleMode(
             Supplier<T> getter,
             Consumer<T> setter) {

@@ -27,7 +27,19 @@
   "vmode.greenchrome": "§2Цветохромный",
   "vmode.thermal": "§4Тепловизор",
   "item.drone.drone_item": "§5Квадрокоптер «Tesmio-1»",
-  "item.drone.remote_item": "§5Пульт управления «Tesmio-1»"
-
-
+  "item.drone.remote_item": "§5Пульт управления «Tesmio-1»",
+  "item.drone.fly_controller": "§eПолетный контроллер",
+  "item.drone.camera": "Подвес с камерой",
+  "item.drone.propeller": "Пропеллер",
+  "item.drone.legs": "Ножки дрона",
+  "item.drone.gps_controller": "§eКоординаттер",
+  "item.drone.ir_controller": "§eИнфрафильтр",
+  "item.drone.ti_controller": "§bТепловизор",
+  "item.drone.manual_chip": "§bДеблокировка контроллера",
+  "item.drone.speed_chip": "§eСкоростная шина",
+  "item.drone.speed_chip2": "§bЧипованная шина",
+  "item.drone.stab_chip": "§eСтабилизатор",
+  "item.drone.zoom1": "§eМеханизм увеличения",
+  "item.drone.zoom2": "§bОбновленные линзы",
+  "warn.set_fly_controller": "§cУстановите полетный контроллер!"
 }

@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
+import ru.tesmio.drone.registry.InitItems;
 
 //TODO:
 public class DroneHUD {
@@ -29,7 +30,8 @@ public class DroneHUD {
     public static void renderDroneHud(GuiGraphics guiGraphics) {
         if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
         if (drone.getControllerUUID() == null) return;
-
+        boolean needFlyController = drone.validateUpdates(InitItems.FLY_CONTROLLER.get(), 4);
+        boolean needGPSController = drone.validateUpdates(InitItems.GPS_CONTROLLER.get(), 2);
         PoseStack poseStack = guiGraphics.pose();
         Player player = drone.level().getPlayerByUUID(drone.getControllerUUID());
         screenWidth = mc.getWindow().getGuiScaledWidth();
@@ -37,31 +39,35 @@ public class DroneHUD {
         renderSignal(guiGraphics, screenWidth, drone);
         poseStack.pushPose();
         poseStack.scale(1.1f, 1.1f, 1.0f);
-        guiGraphics.drawString(mc.font,  drone.getFlightMode().getName(), 10, 10, 0xFFFFFF);
-        guiGraphics.drawString(mc.font, drone.getStabMode().getName(), 130, 10, 0xFFFFFF);
-        guiGraphics.drawString(mc.font,  drone.getZoomMode().getName(), 220, 10, 0xFFFFFF);
-        guiGraphics.drawString(mc.font,  drone.getVisionMode().getName(), 280, 10, 0xFFFFFF);
-        BlockPos pos = drone.blockPosition();
+        if(needFlyController) {
+            guiGraphics.drawString(mc.font, drone.getFlightMode().getName(), 10, 10, 0xFFFFFF);
+            guiGraphics.drawString(mc.font, drone.getStabMode().getName(), 130, 10, 0xFFFFFF);
+            guiGraphics.drawString(mc.font, drone.getZoomMode().getName(), 220, 10, 0xFFFFFF);
+            guiGraphics.drawString(mc.font, drone.getVisionMode().getName(), 280, 10, 0xFFFFFF);
 
-        guiGraphics.drawString(mc.font, Component.literal(   "GPS: " + pos.getX() +" | "+  pos.getY() +" | "+  pos.getZ() ), screenWidth - 470, 27, 0xFFFFFF);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :Y", (drone.getDroneYaw() % 360 + 360) % 360), screenWidth - 60, 30, 0xFFFFFF);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :P", Mth.abs(drone.getDronePitch())), screenWidth - 60, 43, 0xFFFFFF);
-        drawRightAlignedText(guiGraphics, String.format("%.1f° :R", Mth.abs(drone.getDroneRoll())), screenWidth - 60, 56, 0xFFFFFF);
 
-        Vec3 vel = drone.getDeltaMovement();
-        float horizSpeed = (float) Math.sqrt(vel.x * vel.x + vel.z * vel.z) * 20f;
-        float vertSpeed = (float) vel.y * 20f;
-        double altitude = Mth.abs((float) drone.getY()) - drone.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, drone.blockPosition()).getY();
-        double distance = drone.distanceTo(player);
+            drawRightAlignedText(guiGraphics, String.format("%.1f° :Y", (drone.getDroneYaw() % 360 + 360) % 360), screenWidth - 60, 30, 0xFFFFFF);
+            drawRightAlignedText(guiGraphics, String.format("%.1f° :P", Mth.abs(drone.getDronePitch())), screenWidth - 60, 43, 0xFFFFFF);
+            drawRightAlignedText(guiGraphics, String.format("%.1f° :R", Mth.abs(drone.getDroneRoll())), screenWidth - 60, 56, 0xFFFFFF);
 
-        guiGraphics.drawString(font, Component.literal(String.format("H.S: %.1f m/s", horizSpeed)), (screenWidth / 2) -140, screenHeight - 40, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.literal(String.format("V.S: %.1f m/s",  Mth.abs(vertSpeed))), (screenWidth / 2) -70, screenHeight - 40, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.literal(String.format("H: %.1f m", altitude)), (screenWidth / 2) +5, screenHeight - 40, 0xFFFFFF);
-        guiGraphics.drawString(font, Component.literal(String.format("D: %.1f m", distance)), (screenWidth / 2) + 60, screenHeight - 40, 0xFFFFFF);
+            Vec3 vel = drone.getDeltaMovement();
+            float horizSpeed = (float) Math.sqrt(vel.x * vel.x + vel.z * vel.z) * 20f;
+            float vertSpeed = (float) vel.y * 20f;
+            double altitude = Mth.abs((float) drone.getY()) - drone.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, drone.blockPosition()).getY();
+            double distance = drone.distanceTo(player);
 
+            guiGraphics.drawString(font, Component.literal(String.format("H.S: %.1f m/s", horizSpeed)), (screenWidth / 2) - 140, screenHeight - 40, 0xFFFFFF);
+            guiGraphics.drawString(font, Component.literal(String.format("V.S: %.1f m/s", Mth.abs(vertSpeed))), (screenWidth / 2) - 70, screenHeight - 40, 0xFFFFFF);
+            guiGraphics.drawString(font, Component.literal(String.format("H: %.1f m", altitude)), (screenWidth / 2) + 5, screenHeight - 40, 0xFFFFFF);
+            guiGraphics.drawString(font, Component.literal(String.format("D: %.1f m", distance)), (screenWidth / 2) + 60, screenHeight - 40, 0xFFFFFF);
+        }
         poseStack.popPose();
-        renderDynamicCompassSelfRot(guiGraphics, drone.getDroneYaw(), (screenWidth / 2) + 171, screenHeight - 40 - 49,screenWidth);
-        drawCompassBackground(guiGraphics, screenWidth - 59, 5);
+        if(needGPSController) {
+            BlockPos pos = drone.blockPosition();
+            guiGraphics.drawString(mc.font, Component.literal(   "GPS: " + pos.getX() +" | "+  pos.getY() +" | "+  pos.getZ() ), screenWidth - 470, 27, 0xFFFFFF);
+            renderDynamicCompassSelfRot(guiGraphics, drone.getDroneYaw(), (screenWidth / 2) + 171, screenHeight - 40 - 49, screenWidth);
+            drawCompassBackground(guiGraphics, screenWidth - 59, 5);
+        }
     }
 
     private static void renderSignal(GuiGraphics guiGraphics, int screenWidth, DroneEntity drone) {

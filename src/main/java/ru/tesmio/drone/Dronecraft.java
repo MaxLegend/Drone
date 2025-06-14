@@ -18,6 +18,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ru.tesmio.drone.drone.quadcopter.container.DroneEntityScreen;
 import ru.tesmio.drone.packets.*;
 import ru.tesmio.drone.registry.InitEntity;
@@ -32,17 +34,19 @@ public class Dronecraft {
     // Вынести в отдельный класс регистрацию предметов и сущностей. Сделать свою вкладку
     //
     public static final String MODID = "drone";
+    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
     public Dronecraft() {
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         InitTabs.register(bus);
-        bus.addListener(this::commonSetup);
-        bus.addListener(this::onClientSetup);
+
         MinecraftForge.EVENT_BUS.register(this);
 
         InitEntity.register(bus);
         InitItems.register(bus);
         InitMenus.register(bus);
+        bus.addListener(this::commonSetup);
+        bus.addListener(this::onClientSetup);
     }
 
 
@@ -56,12 +60,14 @@ public class Dronecraft {
     public void onServerStarting(ServerStartingEvent event) {
 
     }
+
     public void onClientSetup(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(InitMenus.DRONE_ENTITY_MENU.get(), DroneEntityScreen::new);
+            System.out.println("DroneEntityScreen registered.");
         });
-        RenderEntityMask.initRenderTargets();
 
+        RenderEntityMask.initRenderTargets();
     }
 
 }

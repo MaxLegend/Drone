@@ -27,5 +27,19 @@
   "vmode.greenchrome": "§2Greenchrome",
   "vmode.thermal": "§4Thermal Imager",
   "item.drone.drone_item": "§5Quadcopter «Tesmio One»",
-  "item.drone.remote_item": "§5Remote «Tesmio One»"
+  "item.drone.remote_item": "§5Remote «Tesmio One»",
+  "item.drone.fly_controller": "§eFly Controller",
+  "item.drone.camera": "Camera",
+  "item.drone.propeller": "Propeller",
+  "item.drone.legs": "Drone legs",
+  "item.drone.gps_controller": "§eGPS",
+  "item.drone.ir_controller": "§eInfra-filter",
+  "item.drone.ti_controller": "§bThermal-filter",
+  "item.drone.manual_chip": "§bFly Controller Hack",
+  "item.drone.speed_chip": "§eSpeedy",
+  "item.drone.speed_chip2": "§bChipped speedy",
+  "item.drone.stab_chip": "§eStabilizier",
+  "item.drone.zoom1": "§eZoom One",
+  "item.drone.zoom2": "§bRenewed lens",
+  "warn.set_fly_controller": "§cInstall Fly Controller!"
 }

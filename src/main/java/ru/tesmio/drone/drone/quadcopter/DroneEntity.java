@@ -12,10 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.*;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -27,27 +24,39 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import ru.tesmio.drone.Dronecraft;
+
 import ru.tesmio.drone.drone.BaseDroneEntity;
+
+import ru.tesmio.drone.drone.ModeCycler;
 import ru.tesmio.drone.drone.quadcopter.container.DroneEntityMenu;
+import ru.tesmio.drone.drone.quadcopter.container.UpgradeContainer;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.*;
 import ru.tesmio.drone.registry.InitItems;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 //TODO: отвязка от пульта должна быть при покидании зоны, но не нужно постоянно держать getController.
 // предмет должен помнить текущий НБТ и при взаимодействии предметом надо отправлять пакет, который
 // будет проверять, можно ли соединится с этим дроном. И если можно, то он соединяется и опять
-// записывает в controllerUUID дрона информацию о том, кто управляет
-public class DroneEntity extends BaseDroneEntity implements ContainerEntity, MenuProvider {
-    public DroneEntity INSTANCE;
-    private NonNullList<ItemStack> items = NonNullList.withSize(10, ItemStack.EMPTY);
+// записывает в controllerUUID дрона информацию о том, кто управляет.
+//TODO: разобраться с багом что иногда не синхронизируется с клиентом дрон
+//TODO: отловить баг, почему не сохраняются предметы в инвентаре
+public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
+    private final UpgradeContainer inventory = new UpgradeContainer();
+
     @Nullable
     private ResourceLocation lootTable;
     private long lootTableSeed;
@@ -75,24 +84,19 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
         this.setHealth(20.0f);
     }
 
+
     @Override
     public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
         // Ранний выход для клиентской стороны или неосновной руки
-        if (!level().isClientSide && hand == InteractionHand.MAIN_HAND && player.isShiftKeyDown()) {
-
-            NetworkHooks.openScreen( (ServerPlayer)player, new MenuProvider() {
-                @Override
-                public Component getDisplayName() {
-                    return Component.literal("Drone Control"); // Можно любое имя GUI
-                }
-
-                @Override
-                public AbstractContainerMenu createMenu(int windowId, Inventory inv, Player player) {
-                    return new DroneEntityMenu(windowId, inv, DroneEntity.this);
-                }
-            }, buffer -> {
-                buffer.writeInt(this.getId());
-            });
+        if (!level().isClientSide && player.isShiftKeyDown()) {
+        //    System.out.println("Opening GUI for drone id=" + this.getId());
+//            NetworkHooks.openScreen((ServerPlayer) player, this, buffer -> {
+//                buffer.writeInt(this.getId());
+//            });
+            if (!this.level().isClientSide && player instanceof ServerPlayer) {
+                NetworkHooks.openScreen((ServerPlayer) player, this,
+                        buf -> buf.writeVarInt(this.getId()));
+            }
             return InteractionResult.CONSUME;
         }
         if (hand != InteractionHand.MAIN_HAND || level().isClientSide) {
@@ -157,7 +161,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
     @Override
     public void defineSynchedDroneData(){
         this.entityData.define(DATA_FLIGHT_MODE, FlightMode.NORMAL.name());
-        this.entityData.define(DATA_STAB_MODE, StabMode.STAB.name());
+        this.entityData.define(DATA_STAB_MODE, StabMode.FPV.name());
         this.entityData.define(DATA_ZOOM_MODE, ZoomMode.DEF.name());
         this.entityData.define(DATA_VISION_MODE, VisionMode.NORMAL.name());
     }
@@ -290,7 +294,9 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
         if (getControllerUUID() != null) {
             tag.putUUID("Controller", getControllerUUID());
         }
-        this.addChestVehicleSaveData(tag);
+        CompoundTag invTag = new CompoundTag();
+        ContainerHelper.saveAllItems(invTag, this.inventory.getItems());
+        tag.put("Items", invTag);
     }
 
     @Override
@@ -311,7 +317,8 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
         } else {
             this.setControllerUUID(null);
         }
-        this.readChestVehicleSaveData(tag);
+        CompoundTag invTag = tag.getCompound("Items");
+        ContainerHelper.loadAllItems(invTag, this.inventory.getItems());
     }
 
 
@@ -362,112 +369,278 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity, Men
         return dronePitch;
     }
 
+    public boolean validateUpdates(Item item, int slotIndex) {
+        return inventory.getItem(slotIndex).getItem() == item;
+    }
 
-    public StabMode getStabMode() {
-        return StabMode.valueOf(entityData.get(DATA_STAB_MODE));
+
+    //SETTERS
+    public void setFlightMode(FlightMode mode) {
+        entityData.set(DATA_FLIGHT_MODE, mode.name());
     }
     public void setStabMode(StabMode mode) {
         entityData.set(DATA_STAB_MODE, mode.name());
     }
-    public FlightMode getFlightMode() {
-        return FlightMode.valueOf(entityData.get(DATA_FLIGHT_MODE));
-    }
-    public void setFlightMode(FlightMode mode) {
-        entityData.set(DATA_FLIGHT_MODE, mode.name());
-    }
     public void setVisionMode(VisionMode mode) {
         this.entityData.set(DATA_VISION_MODE, mode.name());
-    }
-    public VisionMode getVisionMode() {
-        return VisionMode.valueOf(this.entityData.get(DATA_VISION_MODE));
-    }
-    public void cycleVisionMode() {
-        cycleMode(this::getVisionMode, this::setVisionMode);
     }
     public void setZoomMode(ZoomMode mode) {
         entityData.set(DATA_ZOOM_MODE, mode.name());
     }
+
+
+    //GETTERS
+    public FlightMode getFlightMode() {
+        return FlightMode.valueOf(entityData.get(DATA_FLIGHT_MODE));
+    }
+    public StabMode getStabMode() {
+        return StabMode.valueOf(entityData.get(DATA_STAB_MODE));
+    }
+    public VisionMode getVisionMode() {
+        return VisionMode.valueOf(this.entityData.get(DATA_VISION_MODE));
+    }
+
+
     public ZoomMode getZoomMode() {
         return ZoomMode.valueOf(entityData.get(DATA_ZOOM_MODE));
     }
+
+    public void cycleVisionMode() {
+        VisionMode current = getCurrentVisionMode();
+        List<VisionMode> availableModes = getAvailableVisionModes();
+        int index = availableModes.indexOf(current);
+        if (index == -1) {
+            setVisionMode(availableModes.get(0));
+            return;
+        }
+        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        VisionMode next = availableModes.get(nextIndex);
+        setVisionMode(next);
+    }
+    public List<VisionMode> getAvailableVisionModes() {
+        List<VisionMode> available = new ArrayList<>();
+        available.add(VisionMode.NORMAL);
+
+        if (validateUpdates(InitItems.IR_CONTROLLER.get(), 1)) {
+            available.add(VisionMode.MONOCHROME);
+            available.add(VisionMode.THERMOCHROME);
+            if (validateUpdates(InitItems.TI_CONTROLLER.get(), 6)) {
+                available.add(VisionMode.GREENCHROME);
+                available.add(VisionMode.THERMAL);
+            }
+        }
+
+        return available;
+    }
+    public VisionMode getCurrentVisionMode() {
+        String stored = entityData.get(DATA_VISION_MODE);
+        try {
+            return VisionMode.valueOf(stored);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            setVisionMode(VisionMode.NORMAL);
+            return VisionMode.NORMAL;
+        }
+    }
     public void cycleStabMode() {
-        cycleMode(this::getStabMode, this::setStabMode);
+        StabMode current = getCurrentStabMode();
+        List<StabMode> availableModes = getAvailableStabModes();
+        int index = availableModes.indexOf(current);
+        if (index == -1) {
+            setStabMode(availableModes.get(0));
+            return;
+        }
+        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        StabMode next = availableModes.get(nextIndex);
+        setStabMode(next);
     }
+    public List<StabMode> getAvailableStabModes() {
+        List<StabMode> available = new ArrayList<>();
+        available.add(StabMode.FPV);
+
+        if (validateUpdates(InitItems.STAB_CHIP.get(), 5)) {
+            available.add(StabMode.STAB);
+        }
+        if (validateUpdates(InitItems.MANUAL_CHIP.get(), 6)) {
+            available.add(StabMode.MANUAL);
+        }
+        return available;
+    }
+    public StabMode getCurrentStabMode() {
+        String stored = entityData.get(DATA_STAB_MODE);
+        try {
+            return StabMode.valueOf(stored);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            setStabMode(StabMode.FPV);
+            return StabMode.FPV;
+        }
+    }
+
     public void cycleZoomMode() {
-        cycleMode(this::getZoomMode, this::setZoomMode);
+        ZoomMode current = getCurrentZoomMode();
+        List<ZoomMode> availableModes = getAvailableZoomModes();
+        int index = availableModes.indexOf(current);
+        if (index == -1) {
+            setZoomMode(availableModes.get(0));
+            return;
+        }
+        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        ZoomMode next = availableModes.get(nextIndex);
+        setZoomMode(next);
     }
+    public List<ZoomMode> getAvailableZoomModes() {
+        List<ZoomMode> available = new ArrayList<>();
+        available.add(ZoomMode.DEF);
+        if (validateUpdates(InitItems.ZOOM1.get(), 8)) {
+            available.add(ZoomMode.X2);
+            available.add(ZoomMode.X4);
+            if (validateUpdates(InitItems.SPEED_CHIP2.get(), 3)) {
+                available.add(ZoomMode.X8);
+                available.add(ZoomMode.SPEC_ZOOM);
+            }
+        }
+
+        return available;
+    }
+    public ZoomMode getCurrentZoomMode() {
+        String stored = entityData.get(DATA_ZOOM_MODE);
+        try {
+            return ZoomMode.valueOf(stored);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            setZoomMode(ZoomMode.DEF);
+            return ZoomMode.DEF;
+        }
+    }
+    public FlightMode getCurrentFlightMode() {
+        String stored = entityData.get(DATA_FLIGHT_MODE);
+        try {
+            return FlightMode.valueOf(stored);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            setFlightMode(FlightMode.NORMAL);
+            return FlightMode.NORMAL;
+        }
+    }
+
     public void cycleFlightMode() {
-        cycleMode(this::getFlightMode, this::setFlightMode);
+        FlightMode current = getCurrentFlightMode();
+        List<FlightMode> availableModes = getAvailableFlightModes();
+        int index = availableModes.indexOf(current);
+        if (index == -1) {
+            setFlightMode(availableModes.get(0));
+            return;
+        }
+        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        FlightMode next = availableModes.get(nextIndex);
+        setFlightMode(next);
+    }
+    public List<FlightMode> getAvailableFlightModes() {
+        List<FlightMode> available = new ArrayList<>();
+        available.add(FlightMode.SILENT);
+        available.add(FlightMode.SLOW);
+        available.add(FlightMode.NORMAL);
+
+        if (validateUpdates(InitItems.SPEED_CHIP.get(), 7)) {
+            available.add(FlightMode.SPORT);
+            if (validateUpdates(InitItems.SPEED_CHIP2.get(), 9)) {
+                available.add(FlightMode.FORCED_SPORT);
+            }
+        }
+
+        return available;
     }
 
-
-
-    @Override
-    public void setLootTable(@Nullable ResourceLocation lootTable) {
-        this.lootTable = lootTable;
-    }
-
-    @Override
-    public void setLootTableSeed(long seed) {
-        this.lootTableSeed = seed;
-    }
-
-    @Override
-    public NonNullList<ItemStack> getItemStacks() {
-        return this.items;
+    public Container getContainer() {
+        return this.inventory;
     }
     @Override
-    public void clearItemStacks() {
-        this.items = NonNullList.withSize(10, ItemStack.EMPTY);
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new DroneEntityMenu(containerId, playerInventory, this);
+    }
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("container.drone_entity");
+    }
+    @Override
+    public void clearContent() {
+        this.inventory.getItems().clear();
     }
 
     @Override
     public int getContainerSize() {
-        return this.items.size();
+        return 10;
     }
 
     @Override
-    public ItemStack getItem(int i) {
-        return null;
+    public void setLootTable(@Nullable ResourceLocation resourceLocation) {
+
+    }
+
+    @Override
+    public void setLootTableSeed(long l) {
+
+    }
+
+    @Override
+    public NonNullList<ItemStack> getItemStacks() {
+        return inventory.getItems();
+    }
+
+    @Override
+    public void clearItemStacks() {
+
+    }
+
+    @Override
+    public boolean isEmpty() {
+        for(ItemStack itemstack : inventory.getItems()) {
+            if (!itemstack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public ItemStack getItem(int index) {
+        return this.inventory.getItems().get(index);
     }
 
     @Override
     public ItemStack removeItem(int index, int count) {
-        return this.removeChestVehicleItem(index, count);
+        return ContainerHelper.removeItem(this.inventory.getItems(), index, count);
     }
 
     @Override
     public ItemStack removeItemNoUpdate(int index) {
-        return this.removeChestVehicleItemNoUpdate(index);
+        return ContainerHelper.takeItem(this.inventory.getItems(), index);
     }
 
     @Override
     public void setItem(int index, ItemStack stack) {
-        this.setChestVehicleItem(index, stack);
+        this.inventory.getItems().set(index, stack);
+        if (!stack.isEmpty() && stack.getCount() > this.getMaxStackSize()) {
+            stack.setCount(this.getMaxStackSize());
+        }
     }
 
     @Override
     public void setChanged() {
-
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return this.isChestVehicleStillValid(player);
+        if (this.isRemoved()) {
+            return false;
+        } else {
+            return !(player.distanceToSqr(this) > 64.0D);
+        }
     }
 
     @Override
-    public void clearContent() {
-        this.clearChestVehicleContent();
-    }
-    @Override
-    public Component getDisplayName() {
-        return Component.literal("Drone Upgrades");
+    public void startOpen(Player player) {
     }
 
-    @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int windowId, Inventory playerInventory, Player player) {
-        return new DroneEntityMenu(windowId, playerInventory, this);
+    public void stopOpen(Player player) {
     }
+
 }
