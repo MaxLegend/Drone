@@ -29,7 +29,7 @@ import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
 public class BaseDroneEntity extends Mob {
     private static final EntityDataAccessor<Float> DATA_VIEW_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_SIM_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
-    protected static final KeyMapping modifierKey = CTRL_KEY;
+
     public final float AIR_FRICTION = 0.98f;
     public final float STAB_FRICTION  = 0.90f;
     public UUID CONTROLLER_UUID;
@@ -114,7 +114,7 @@ public class BaseDroneEntity extends Mob {
             Consumer<T> setter) {
 
         T current = getter.get();
-        T next = modifierKey.isDown() ? current.prev() : current.next();
+        T next = CTRL_KEY.isDown() ? current.prev() : current.next();
         setter.accept(next);
     }
     public interface ICyclableEnum<T extends Enum<T>> {

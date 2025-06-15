@@ -2,6 +2,8 @@ package ru.tesmio.drone.drone.quadcopter;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -47,16 +49,18 @@ import ru.tesmio.drone.registry.InitItems;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
+
 
 //TODO: отвязка от пульта должна быть при покидании зоны, но не нужно постоянно держать getController.
 // предмет должен помнить текущий НБТ и при взаимодействии предметом надо отправлять пакет, который
 // будет проверять, можно ли соединится с этим дроном. И если можно, то он соединяется и опять
 // записывает в controllerUUID дрона информацию о том, кто управляет.
 //TODO: разобраться с багом что иногда не синхронизируется с клиентом дрон
-//TODO: отловить баг, почему не сохраняются предметы в инвентаре
+//
 public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     private final UpgradeContainer inventory = new UpgradeContainer();
-
+    private final NonNullList<ItemStack> items;
     @Nullable
     private ResourceLocation lootTable;
     private long lootTableSeed;
@@ -82,6 +86,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         this.setPersistenceRequired();
         this.setNoGravity(false);
         this.setHealth(20.0f);
+        this.items = NonNullList.withSize(10, ItemStack.EMPTY);
     }
 
 
@@ -281,10 +286,11 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         this.velocity = this.velocity.add(input);
     }
 
-
     /** NBT */
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+
         tag.putFloat("Yaw", getDroneYaw());
         tag.putFloat("Pitch", getDronePitch());
         tag.putFloat("Roll", getDroneRoll());
@@ -292,15 +298,38 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         tag.putString("StabMode", getStabMode().name());
         tag.putString("VisionMode", getVisionMode().name());
         if (getControllerUUID() != null) {
-            tag.putUUID("Controller", getControllerUUID());
+            tag.putUUID("ControllerUUID", getControllerUUID());
         }
-        CompoundTag invTag = new CompoundTag();
-        ContainerHelper.saveAllItems(invTag, this.inventory.getItems());
-        tag.put("Items", invTag);
+        writeNBT(tag);
     }
-
+    public void writeNBT(CompoundTag tag) {
+        ListTag itemList = new ListTag();
+        for (int i = 0; i < this.inventory.getContainerSize(); i++) {
+            ItemStack stack = this.inventory.getItem(i);
+            CompoundTag itemTag = new CompoundTag();
+            if (!stack.isEmpty()) {
+                stack.save(itemTag);
+            }
+            itemTag.putByte("Slot", (byte) i);
+            itemList.add(itemTag);
+        }
+        tag.put("Items", itemList);
+    }
+    public void readNBT(CompoundTag tag) {
+        ListTag itemList = tag.getList("Items", Tag.TAG_COMPOUND);
+        this.items.clear();
+        for (int i = 0; i < itemList.size(); i++) {
+            CompoundTag itemTag = itemList.getCompound(i);
+            int slot = itemTag.getByte("Slot") & 255;
+            if (slot >= 0 && slot < this.inventory.getContainerSize()) {
+                this.inventory.setItem(slot, ItemStack.of(itemTag));
+            }
+        }
+    }
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+
         setDroneDirection(tag.getFloat("Yaw"), tag.getFloat("Pitch"));
         setDroneRoll(tag.getFloat("Roll"));
         if (tag.contains("FlightMode")) {
@@ -317,8 +346,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         } else {
             this.setControllerUUID(null);
         }
-        CompoundTag invTag = tag.getCompound("Items");
-        ContainerHelper.loadAllItems(invTag, this.inventory.getItems());
+        readNBT(tag);
     }
 
 
@@ -413,7 +441,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
             setVisionMode(availableModes.get(0));
             return;
         }
-        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        int nextIndex = CTRL_KEY.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
         VisionMode next = availableModes.get(nextIndex);
         setVisionMode(next);
     }
@@ -449,7 +477,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
             setStabMode(availableModes.get(0));
             return;
         }
-        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        int nextIndex = CTRL_KEY.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
         StabMode next = availableModes.get(nextIndex);
         setStabMode(next);
     }
@@ -483,7 +511,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
             setZoomMode(availableModes.get(0));
             return;
         }
-        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        int nextIndex = CTRL_KEY.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
         ZoomMode next = availableModes.get(nextIndex);
         setZoomMode(next);
     }
@@ -528,7 +556,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
             setFlightMode(availableModes.get(0));
             return;
         }
-        int nextIndex = modifierKey.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
+        int nextIndex = CTRL_KEY.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
         FlightMode next = availableModes.get(nextIndex);
         setFlightMode(next);
     }
@@ -561,7 +589,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     }
     @Override
     public void clearContent() {
-        this.inventory.getItems().clear();
+        this.items.clear();
     }
 
     @Override
@@ -581,7 +609,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
     @Override
     public NonNullList<ItemStack> getItemStacks() {
-        return inventory.getItems();
+        return items;
     }
 
     @Override
@@ -591,7 +619,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
     @Override
     public boolean isEmpty() {
-        for(ItemStack itemstack : inventory.getItems()) {
+        for(ItemStack itemstack : items) {
             if (!itemstack.isEmpty()) {
                 return false;
             }
@@ -601,22 +629,22 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
     @Override
     public ItemStack getItem(int index) {
-        return this.inventory.getItems().get(index);
+        return this.items.get(index);
     }
 
     @Override
     public ItemStack removeItem(int index, int count) {
-        return ContainerHelper.removeItem(this.inventory.getItems(), index, count);
+        return ContainerHelper.removeItem(this.items, index, count);
     }
 
     @Override
     public ItemStack removeItemNoUpdate(int index) {
-        return ContainerHelper.takeItem(this.inventory.getItems(), index);
+        return ContainerHelper.takeItem(this.items, index);
     }
 
     @Override
     public void setItem(int index, ItemStack stack) {
-        this.inventory.getItems().set(index, stack);
+        items.set(index, stack);
         if (!stack.isEmpty() && stack.getCount() > this.getMaxStackSize()) {
             stack.setCount(this.getMaxStackSize());
         }
@@ -624,6 +652,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
     @Override
     public void setChanged() {
+        this.setChanged();
     }
 
     @Override

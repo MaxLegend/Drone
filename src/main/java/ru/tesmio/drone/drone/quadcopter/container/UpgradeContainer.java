@@ -7,14 +7,11 @@ import net.minecraft.world.item.ItemStack;
 import ru.tesmio.drone.registry.InitItems;
 
 public class UpgradeContainer extends SimpleContainer {
-    private NonNullList<ItemStack> items = NonNullList.withSize(10, ItemStack.EMPTY);
+
     public UpgradeContainer() {
         super(10);
     }
 
-    public NonNullList<ItemStack> getItems() {
-        return items;
-    }
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
