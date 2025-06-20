@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec2;
@@ -28,8 +29,11 @@ public class DroneHUD {
     static Font font = mc.font;
     static int screenWidth,screenHeight;
     public static void renderDroneHud(GuiGraphics guiGraphics) {
+
         if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
-        if (drone.getControllerUUID() == null) return;
+
+        if (!mc.player.getUUID().equals(drone.getControllerUUID())) return;
+
         boolean needFlyController = drone.validateUpdates(InitItems.FLY_CONTROLLER.get(), 4);
         boolean needGPSController = drone.validateUpdates(InitItems.GPS_CONTROLLER.get(), 2);
         PoseStack poseStack = guiGraphics.pose();

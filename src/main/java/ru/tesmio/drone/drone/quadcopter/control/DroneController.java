@@ -229,10 +229,12 @@ public class DroneController {
             }
             double sensitivity = mc.options.sensitivity().get();
             double scale = Math.pow(sensitivity * 0.6 + 0.2, 3);
+
             currentYaw = (float) (yawVelocity * scale);
             currentPitch = (float) (pitchVelocity * scale);
             currentPitch = Mth.clamp(currentPitch, -45.0f, 90.0f);
-            drone.applyView(currentYaw,currentPitch,currentRoll);
+
+            drone.applyView(currentYaw, currentPitch, currentRoll);
 
         }
 

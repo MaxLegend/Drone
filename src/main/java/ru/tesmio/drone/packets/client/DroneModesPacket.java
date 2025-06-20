@@ -8,13 +8,13 @@ import ru.tesmio.drone.packets.PacketClientHandler;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class DroneModesSyncPacket {
+public class DroneModesPacket {
     public final UUID droneUUID;
     public final DroneEntity.FlightMode flightMode;
     public final DroneEntity.StabMode stabMode;
     public final DroneEntity.ZoomMode zoomMode;
     public final DroneEntity.VisionMode visionMode;
-    public DroneModesSyncPacket(UUID droneUUID, DroneEntity.FlightMode flightMode,
+    public DroneModesPacket(UUID droneUUID, DroneEntity.FlightMode flightMode,
             DroneEntity.StabMode stabMode, DroneEntity.ZoomMode zoomMode, DroneEntity.VisionMode visionMode) {
         this.droneUUID = droneUUID;
         this.flightMode = flightMode;
@@ -23,7 +23,7 @@ public class DroneModesSyncPacket {
         this.visionMode = visionMode;
     }
 
-    public static void encode(DroneModesSyncPacket msg, FriendlyByteBuf buf) {
+    public static void encode(DroneModesPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.droneUUID);
         buf.writeEnum(msg.flightMode);
         buf.writeEnum(msg.stabMode);
@@ -31,16 +31,16 @@ public class DroneModesSyncPacket {
         buf.writeEnum(msg.visionMode);
     }
 
-    public static DroneModesSyncPacket decode(FriendlyByteBuf buf) {
+    public static DroneModesPacket decode(FriendlyByteBuf buf) {
         UUID droneUUID = buf.readUUID();
         DroneEntity.FlightMode flightMode = buf.readEnum(DroneEntity.FlightMode.class);
         DroneEntity.StabMode stabMode = buf.readEnum(DroneEntity.StabMode.class);
         DroneEntity.ZoomMode zoomMode = buf.readEnum(DroneEntity.ZoomMode.class);
         DroneEntity.VisionMode visionMode = buf.readEnum(DroneEntity.VisionMode.class);
-        return new DroneModesSyncPacket(droneUUID, flightMode, stabMode, zoomMode,visionMode);
+        return new DroneModesPacket(droneUUID, flightMode, stabMode, zoomMode,visionMode);
     }
 
-    public static void handle(DroneModesSyncPacket msg, Supplier<NetworkEvent.Context> ctx) {
+    public static void handle(DroneModesPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> PacketClientHandler.handleDroneModesSyncPacket(msg));
         ctx.get().setPacketHandled(true);
     }

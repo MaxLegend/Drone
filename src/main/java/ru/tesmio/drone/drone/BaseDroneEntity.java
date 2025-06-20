@@ -38,20 +38,6 @@ public class BaseDroneEntity extends Mob {
         this.setHealth(20.0f);
     }
 
-
-
-    @Override
-    public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource source) {
-        float minFallDistance =5.0f;
-        if (fallDistance <= minFallDistance) {
-            return false;
-        }
-        float damage = (fallDistance - minFallDistance) * 0.5f;
-        this.hurt(source, damage);
-        return false;
-    }
-
-
     @Override
     public boolean isAlwaysTicking() {return true;}
     @Override

@@ -33,25 +33,26 @@ public class DroneClientEvent {
         double zoomFov = baseFov * drone.getZoom();
         event.setFOV(zoomFov);
     }
+
     @SubscribeEvent
     public static void setupViewport(ViewportEvent.ComputeCameraAngles event) {
+
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.getCameraEntity() instanceof DroneEntity drone)) { return; }
-            float partialTicks = mc.getFrameTime();
-            float interpolatedYaw = Mth.lerp(partialTicks, drone.prevYaw, drone.getDroneYaw());
-            float interpolatedPitch = Mth.lerp(partialTicks, drone.prevPitch, drone.getDronePitch());
-            float interpolatedRoll = Mth.lerp(partialTicks, drone.prevRoll, drone.getDroneRoll());
-            float smoothedRoll = interpolatedRoll * 0.8f;
+        if (!(mc.getCameraEntity() instanceof DroneEntity drone)) return;
+
+        float partialTicks = mc.getFrameTime();
+        float interpolatedRoll = Mth.lerp(partialTicks, drone.prevRoll, drone.getDroneRoll());
+        float smoothedRoll = interpolatedRoll * 0.8f;
+        float interpolatedYaw = Mth.lerp(partialTicks, drone.prevYaw, drone.getDroneYaw());
+        float interpolatedPitch = Mth.lerp(partialTicks, drone.prevPitch, drone.getDronePitch());
+
+        event.setRoll(-smoothedRoll);
         if (mc.options.getCameraType().isFirstPerson()) {
-            event.setRoll(-smoothedRoll);
             event.setYaw(interpolatedYaw);
             event.setPitch(interpolatedPitch);
-        } else {
-            drone.setDronePitch(interpolatedPitch);
-            drone.setDroneYaw(interpolatedYaw);
-            event.setRoll(-smoothedRoll);
         }
     }
+
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -82,6 +83,7 @@ public class DroneClientEvent {
 
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
+
         DroneHUD.renderDroneHud(event.getGuiGraphics());
     }
     @SubscribeEvent

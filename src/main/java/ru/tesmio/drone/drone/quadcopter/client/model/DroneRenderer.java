@@ -19,7 +19,10 @@ public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
     }
     @Override
     public void render(DroneEntity drone, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+
+        float interpolatedYaw = Mth.lerp(partialTicks, drone.prevYaw, drone.getDroneYaw());
         if (drone.isLinked() && !drone.isInWater()) {
+
             // ageInTicks — можно взять как totalTicks + partialTicks
             float ageInTicks = drone.tickCount + partialTicks;
 
@@ -54,9 +57,13 @@ public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
 
     @Override
     protected void setupRotations(DroneEntity drone, PoseStack poseStack, float ageInTicks, float rotationYaw, float partialTicks) {
+
+
         super.setupRotations(drone, poseStack, ageInTicks, rotationYaw, partialTicks);
 
         Minecraft mc = Minecraft.getInstance();
+        if (Minecraft.getInstance().getCameraEntity() == drone) {
+
         if (mc.getCameraEntity() == drone) {
             float maxTilt = 0.38f;
 
@@ -90,6 +97,7 @@ public class DroneRenderer extends MobRenderer<DroneEntity, DroneModel> {
             // Сначала наклон по Z (влево-вправо), потом по X (вперёд-назад)
             poseStack.mulPose(Axis.ZP.rotation(-tiltZ));
             poseStack.mulPose(Axis.XP.rotation(tiltX));
+        }
         }
 
     }

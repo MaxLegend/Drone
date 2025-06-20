@@ -27,6 +27,14 @@ public class PacketClientHandler {
             }
         }
     }
+    public static void handleDroneInventorySyncPacket(DroneInventorySyncPacket msg) {
+        DroneEntity drone = player.level().getEntitiesOfClass(DroneEntity.class, player.getBoundingBox().inflate(64)).stream()
+                                  .filter(d -> msg.droneUUID.equals(d.getUUID()))
+                                  .findFirst().orElse(null);
+        if (drone != null) {
+            drone.readNBT(msg.inventoryTag);
+        }
+    }
     public static void handleDroneSyncViewPacket(DroneSyncViewPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
@@ -55,7 +63,7 @@ public class PacketClientHandler {
             drone.syncViewAndSimDistance(msg.viewChunks, msg.simChunks);
         }
     }
-    public static void handleDroneModesSyncPacket(DroneModesSyncPacket msg) {
+    public static void handleDroneModesSyncPacket(DroneModesPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
 

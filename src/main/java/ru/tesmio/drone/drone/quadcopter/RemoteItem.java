@@ -20,6 +20,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.PacketDistributor;
 import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.packets.PacketSystem;
+import ru.tesmio.drone.packets.client.DistanceControlPacket;
+import ru.tesmio.drone.packets.client.DroneControllerPacket;
 import ru.tesmio.drone.packets.server.DroneReconnectPacket;
 
 
@@ -45,8 +47,8 @@ public class RemoteItem extends Item {
             tag.putUUID("DroneUUID", drone.getUUID());
             stack.setTag(tag);
             drone.setControllerUUID(player.getUUID());
-
             player.displayClientMessage(Component.literal("§aДрон успешно привязан."), true);
+        //    System.out.println("drone.getUUID() " + "  " + player.getUUID());
         }
 
         return InteractionResult.SUCCESS;
@@ -70,18 +72,21 @@ public class RemoteItem extends Item {
         }
 
         if (!level.isClientSide) {
-            // На сервере отправляем пакет восстановления связи
             UUID targetUUID = getLinkedDroneUUID(stack);
-            if (targetUUID != null) {
-                PacketSystem.CHANNEL.sendToServer(new DroneReconnectPacket(targetUUID));
+            DroneEntity drone = findDroneByUUID(player, targetUUID);
+            if (drone != null) {
+                if (player instanceof ServerPlayer serverPlayer) {
+                    PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+                            new DroneControllerPacket(drone.getUUID(), player.getUUID()));
+                }
+                return InteractionResultHolder.success(stack);
             }
             return InteractionResultHolder.success(stack);
         }
 
-        // На клиенте ищем дрона и переключаем камеру
         UUID targetUUID = getLinkedDroneUUID(stack);
         DroneEntity drone = findDroneByUUID(player, targetUUID);
-
+        System.out.println("drone " + drone);
         if (drone != null) {
             Minecraft.getInstance().setCameraEntity(drone);
             return InteractionResultHolder.success(stack);

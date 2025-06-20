@@ -1,5 +1,6 @@
 package ru.tesmio.drone.packets.server;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,8 +11,7 @@ import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.DistanceControlPacket;
 import ru.tesmio.drone.packets.client.DroneControllerPacket;
-import ru.tesmio.drone.packets.client.DroneModesSyncPacket;
-import ru.tesmio.drone.packets.server.DroneViewPacket;
+import ru.tesmio.drone.packets.client.DroneInventorySyncPacket;
 
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -43,7 +43,7 @@ public class DroneReconnectPacket {
                 if (drone instanceof DroneEntity droneEntity) {
 
                     droneEntity.setControllerUUID(player.getUUID());
-                    System.out.println("RESYNC" + droneEntity.getUUID() + "    "+ droneEntity.getControllerUUID());
+
                     // 1. Основной пакет контроллера
                     PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                             new DroneControllerPacket(droneEntity.getUUID(), droneEntity.getControllerUUID()));
@@ -63,12 +63,17 @@ public class DroneReconnectPacket {
 
                     // 4. Синхронизация всех режимов дрона
                     // Создаем пакет для синхронизации режимов (если его нет, нужно создать)
+//                    PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+//                            new DroneModesSyncPacket(droneEntity.getUUID(),
+//                                    droneEntity.getFlightMode(),
+//                                    droneEntity.getStabMode(),
+//                                    droneEntity.getZoomMode(), droneEntity.getVisionMode()));
+                    CompoundTag invTag = new CompoundTag();
+                    droneEntity.writeNBT(invTag);
                     PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                            new DroneModesSyncPacket(droneEntity.getUUID(),
-                                    droneEntity.getFlightMode(),
-                                    droneEntity.getStabMode(),
-                                    droneEntity.getZoomMode(), droneEntity.getVisionMode()));
+                            new DroneInventorySyncPacket(droneEntity.getUUID(), invTag));
                 }
+
             });
         ctx.get().setPacketHandled(true);
     }

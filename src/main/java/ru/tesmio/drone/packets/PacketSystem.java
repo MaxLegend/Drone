@@ -50,15 +50,22 @@ public class PacketSystem {
                 DistanceControlPacket::encode,
                 DistanceControlPacket::decode,
                 DistanceControlPacket::handle);
-
+        CHANNEL.registerMessage(id++, DroneInventorySyncPacket.class,
+                DroneInventorySyncPacket::encode,
+                DroneInventorySyncPacket::decode,
+                DroneInventorySyncPacket::handle);
 
         CHANNEL.registerMessage(id++, DroneReconnectPacket.class,
                 DroneReconnectPacket::encode,
                 DroneReconnectPacket::decode,
                 DroneReconnectPacket::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CHANNEL.registerMessage(id++, DroneModesSyncPacket.class,
-                DroneModesSyncPacket::encode,
-                DroneModesSyncPacket::decode,
-                DroneModesSyncPacket::handle);
+        CHANNEL.registerMessage(id++, DroneModesPacket.class,
+                DroneModesPacket::encode,
+                DroneModesPacket::decode,
+                DroneModesPacket::handle);
+        CHANNEL.registerMessage(id++, DroneModesC2SP.class,
+                DroneModesC2SP::encode,
+                DroneModesC2SP::decode,
+                DroneModesC2SP::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
 }
