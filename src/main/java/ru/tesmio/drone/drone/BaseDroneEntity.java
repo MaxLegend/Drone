@@ -27,36 +27,19 @@ import java.util.function.Supplier;
 import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
 
 public class BaseDroneEntity extends Mob {
-    private static final EntityDataAccessor<Float> DATA_VIEW_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<Float> DATA_SIM_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
 
     public final float AIR_FRICTION = 0.98f;
     public final float STAB_FRICTION  = 0.90f;
-    public UUID CONTROLLER_UUID;
+
     public BaseDroneEntity(EntityType<? extends Mob> type, Level world) {
         super(type, world);
         this.setPersistenceRequired();
         this.setNoGravity(false);
         this.setHealth(20.0f);
     }
-    @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        defineSynchedDroneData();
-        this.entityData.define(DATA_SIM_DISTANCE, 0f);
-        this.entityData.define(DATA_VIEW_DISTANCE, 0f);
-    }
-    public void syncViewAndSimDistance(float syncView, float syncSimDist) {
-        entityData.set(DATA_VIEW_DISTANCE, syncView);
-        entityData.set(DATA_SIM_DISTANCE, syncSimDist);
-    }
-    public float getSyncView() {
-        return entityData.get(DATA_VIEW_DISTANCE);
-    }
-    public float getSyncSimDist() {
-        return entityData.get(DATA_SIM_DISTANCE);
-    }
-    public void defineSynchedDroneData() {}
+
+
+
     @Override
     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource source) {
         float minFallDistance =5.0f;
@@ -67,18 +50,7 @@ public class BaseDroneEntity extends Mob {
         this.hurt(source, damage);
         return false;
     }
-    public UUID getControllerUUID() {
-        return CONTROLLER_UUID;
-    }
-    public void setControllerUUID(UUID uuid) {
-        this.CONTROLLER_UUID = uuid;
-    }
-    public void unlinkController() {
-        this.CONTROLLER_UUID = null;
-    }
-    public boolean isLinked() {
-        return CONTROLLER_UUID != null;
-    }
+
 
     @Override
     public boolean isAlwaysTicking() {return true;}
@@ -87,36 +59,8 @@ public class BaseDroneEntity extends Mob {
 
 
 
-    public void syncDie() {
-        if (!level().isClientSide && getControllerUUID() != null) {
-            Player player = level().getPlayerByUUID(getControllerUUID());
-            if (player instanceof ServerPlayer sp) {
-                PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp),
-                        new DroneDeathPacket(false, getControllerUUID()));
-            }
-        }
-    }
-    @Override
-    public void die(DamageSource cause) {
-        if (!this.isRemoved()) {
-            if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.SMOKE,
-                        this.getX(), this.getY(), this.getZ(),
-                        10, 0.2, 0.2, 0.2, 0.1);
-            }
-            syncDie();
-            this.discard();
-        }
-    }
 
-    public <T extends Enum<T> & ICyclableEnum<T>> void cycleMode(
-            Supplier<T> getter,
-            Consumer<T> setter) {
 
-        T current = getter.get();
-        T next = CTRL_KEY.isDown() ? current.prev() : current.next();
-        setter.accept(next);
-    }
     public interface ICyclableEnum<T extends Enum<T>> {
         T next();
         T prev();

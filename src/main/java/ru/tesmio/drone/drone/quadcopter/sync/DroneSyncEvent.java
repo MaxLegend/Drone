@@ -39,7 +39,7 @@ public class DroneSyncEvent {
                                               .orElse(null);
 
                     if (drone != null) {
-                    System.out.println("onPlayerLogin drone.getUUID() " + drone.getUUID() + "  " + player.getUUID());
+                        //    System.out.println("onPlayerLogin drone.getUUID() " + drone.getUUID() + "  " + player.getUUID());
                         PacketSystem.CHANNEL.send(
                                 PacketDistributor.PLAYER.with(() -> player),
                                 new DroneControllerPacket(drone.getUUID(), player.getUUID())

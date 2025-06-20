@@ -28,11 +28,11 @@ import ru.tesmio.drone.registry.InitMenus;
 import ru.tesmio.drone.registry.InitTabs;
 import ru.tesmio.drone.shader.RenderEntityMask;
 
+
+
 @Mod(Dronecraft.MODID)
 public class Dronecraft {
-    //TODO: DefferedRegister вынести все в один класс.
-    // Вынести в отдельный класс регистрацию предметов и сущностей. Сделать свою вкладку
-    //
+
     public static final String MODID = "drone";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
 

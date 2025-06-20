@@ -76,26 +76,7 @@ public class PacketClientHandler {
             drone.setZoomMode(msg.zoomMode);
         }
     }
-    public static void handleDroneVisionModePacket(DroneVisionModePacket msg) {
-        if (mc.player != null && mc.level != null) {
-   //         mc.player.displayClientMessage(Component.literal(msg.mode.name()), true);
-        }
-    }
-    public static void handleDroneZoomModePacket(DroneZoomModePacket msg) {
-        if (mc.player != null && mc.level != null) {
-            mc.player.displayClientMessage(Component.literal(msg.mode.name()), true);
-        }
-    }
-    public static void handleDroneStabModePacket(DroneStabModePacket msg) {
-        if (mc.player != null && mc.level != null) {
-            // mc.player.displayClientMessage(msg.mode.name(), true);
-        }
-    }
-    public static void handleDroneFlightModePacket(DroneFlightModePacket msg) {
-        if (mc.player != null && mc.level != null) {
-      //      mc.player.displayClientMessage(msg.mode.getDisplayText(), true);
-        }
-    }
+
     public static void handleActionBarMessagePacket(ActionBarMessagePacket msg) {
         if (net.minecraft.client.Minecraft.getInstance().player != null) {
             net.minecraft.client.Minecraft.getInstance().player.displayClientMessage(Component.translatable(msg.message), true);

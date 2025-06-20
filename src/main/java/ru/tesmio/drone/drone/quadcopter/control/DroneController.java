@@ -6,7 +6,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.lwjgl.glfw.GLFW;
 
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
@@ -14,6 +17,7 @@ import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.server.*;
 
 //TODO: Чистка кода, стилизация, комментирование
+@OnlyIn(Dist.CLIENT)
 public class DroneController {
 
     public static final KeyMapping EXIT_CONTROL_KEY = new KeyMapping(
@@ -83,25 +87,26 @@ public class DroneController {
             }
         }
     }
+
     public static void useKey() {
         if (FLIGHT_MODE_KEY.consumeClick()) {
             if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneFlightModeServerPacket.sendToServer(drone.getUUID());
+                drone.cycleFlightMode();
             }
         }
         if (STAB_MODE_KEY.consumeClick()) {
             if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneStabModeServerPacket.sendToServer(drone.getUUID());
+                drone.cycleStabMode();
             }
         }
         if (ZOOM_MODE_KEY.consumeClick()) {
             if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneZoomModeServerPacket.sendToServer(drone.getUUID());
+                drone.cycleZoomMode();
             }
         }
         if (VISION_MODE_KEY.consumeClick()) {
             if(mc.getCameraEntity() instanceof DroneEntity drone) {
-                DroneVisionModeServerPacket.sendToServer(drone.getUUID());
+                    drone.cycleVisionMode();
             }
         }
     }

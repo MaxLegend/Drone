@@ -1,11 +1,14 @@
 package ru.tesmio.drone.packets;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.packets.client.*;
 import ru.tesmio.drone.packets.server.*;
+
+import java.util.Optional;
 
 
 //TODO: Реализовать методы оптимизации пакетов: квантование и предсказание как предлагает deepseek
@@ -42,46 +45,17 @@ public class PacketSystem {
     DroneControllerPacket::encode,
     DroneControllerPacket::decode,
     DroneControllerPacket::handle);
-        CHANNEL.registerMessage(id++, DroneFlightModePacket.class,
-                DroneFlightModePacket::encode,
-                DroneFlightModePacket::decode,
-                DroneFlightModePacket::handle);
-        CHANNEL.registerMessage(id++, DroneFlightModeServerPacket.class,
-                DroneFlightModeServerPacket::encode,
-                DroneFlightModeServerPacket::decode,
-                DroneFlightModeServerPacket::handle);
+
         CHANNEL.registerMessage(id++, DistanceControlPacket.class,
                 DistanceControlPacket::encode,
                 DistanceControlPacket::decode,
                 DistanceControlPacket::handle);
-        CHANNEL.registerMessage(id++, DroneStabModePacket.class,
-                DroneStabModePacket::encode,
-                DroneStabModePacket::decode,
-                DroneStabModePacket::handle);
-        CHANNEL.registerMessage(id++, DroneStabModeServerPacket.class,
-                DroneStabModeServerPacket::encode,
-                DroneStabModeServerPacket::decode,
-                DroneStabModeServerPacket::handle);
-        CHANNEL.registerMessage(id++, DroneZoomModePacket.class,
-                DroneZoomModePacket::encode,
-                DroneZoomModePacket::decode,
-                DroneZoomModePacket::handle);
-        CHANNEL.registerMessage(id++, DroneZoomModeServerPacket.class,
-                DroneZoomModeServerPacket::encode,
-                DroneZoomModeServerPacket::decode,
-                DroneZoomModeServerPacket::handle);
-        CHANNEL.registerMessage(id++, DroneVisionModePacket.class,
-                DroneVisionModePacket::encode,
-                DroneVisionModePacket::decode,
-                DroneVisionModePacket::handle);
-        CHANNEL.registerMessage(id++, DroneVisionModeServerPacket.class,
-                DroneVisionModeServerPacket::encode,
-                DroneVisionModeServerPacket::decode,
-                DroneVisionModeServerPacket::handle);
+
+
         CHANNEL.registerMessage(id++, DroneReconnectPacket.class,
                 DroneReconnectPacket::encode,
                 DroneReconnectPacket::decode,
-                DroneReconnectPacket::handle);
+                DroneReconnectPacket::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, DroneModesSyncPacket.class,
                 DroneModesSyncPacket::encode,
                 DroneModesSyncPacket::decode,

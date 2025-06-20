@@ -13,6 +13,7 @@ import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 public class MouseHandlerMixin {
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void onTurnPlayer(CallbackInfo ci) {
+
         Minecraft mc = Minecraft.getInstance();
         if (mc.getCameraEntity() instanceof DroneEntity) {
             ci.cancel(); // Отменяем поворот игрока

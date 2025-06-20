@@ -1,6 +1,7 @@
 package ru.tesmio.drone.drone.quadcopter;
 
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -32,14 +33,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.network.NetworkHooks;
 import net.minecraftforge.network.PacketDistributor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 
+import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.drone.BaseDroneEntity;
 
-import ru.tesmio.drone.drone.ModeCycler;
+
 import ru.tesmio.drone.drone.quadcopter.container.DroneEntityMenu;
 import ru.tesmio.drone.drone.quadcopter.container.UpgradeContainer;
 import ru.tesmio.drone.packets.PacketSystem;
@@ -48,6 +54,8 @@ import ru.tesmio.drone.registry.InitItems;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
 
@@ -56,27 +64,27 @@ import static ru.tesmio.drone.drone.quadcopter.control.DroneController.CTRL_KEY;
 // предмет должен помнить текущий НБТ и при взаимодействии предметом надо отправлять пакет, который
 // будет проверять, можно ли соединится с этим дроном. И если можно, то он соединяется и опять
 // записывает в controllerUUID дрона информацию о том, кто управляет.
-//TODO: разобраться с багом что иногда не синхронизируется с клиентом дрон
 //
+// TODO: Остановился на процессе решения вопроса с переключением режимов - не переключаются вложенные режимы - почему то.
 public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
-    private final UpgradeContainer inventory = new UpgradeContainer();
-    private final NonNullList<ItemStack> items;
-    @Nullable
-    private ResourceLocation lootTable;
-    private long lootTableSeed;
+    private static final EntityDataAccessor<Float> DATA_VIEW_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_SIM_DISTANCE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<String> DATA_FLIGHT_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_STAB_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_ZOOM_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<String> DATA_VISION_MODE = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.STRING);
- //   private static final EntityDataAccessor<Optional<UUID>> DATA_CONTROLLER = SynchedEntityData.defineId(DroneEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+
+    public UUID CONTROLLER_UUID;
+    public static final Logger LOGGER = LogManager.getLogger(Dronecraft.MODID);
+    private final UpgradeContainer inventory = new UpgradeContainer();
+    private final NonNullList<ItemStack> items;
     private Vec3 velocity = Vec3.ZERO;
     private float droneRoll, droneYaw, dronePitch;
     public float prevRoll, prevYaw, prevPitch;
     public float prevTiltX = 0f;
     public float prevTiltZ = 0f;
-    private Vec3 lastInput = Vec3.ZERO;
-    public double currentSpeed = 0.0; // Текущая скорость (можно сохранить и между тикками)
-    public final double acceleration = 0.01; // Ускорение (изменяй по вкусу)
+    public double currentSpeed = 0.0;
+    public final double acceleration = 0.01;
 
 
 
@@ -88,36 +96,78 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         this.setHealth(20.0f);
         this.items = NonNullList.withSize(10, ItemStack.EMPTY);
     }
+    public void syncDie() {
+        if (!level().isClientSide && getControllerUUID() != null) {
+            Player player = level().getPlayerByUUID(getControllerUUID());
+            if (player instanceof ServerPlayer sp) {
+                PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp),
+                        new DroneDeathPacket(false, getControllerUUID()));
+            }
+        }
+    }
+    @Override
+    public void die(DamageSource cause) {
+        if (!this.isRemoved()) {
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ParticleTypes.SMOKE,
+                        this.getX(), this.getY(), this.getZ(),
+                        10, 0.2, 0.2, 0.2, 0.1);
+            }
+            syncDie();
+            this.discard();
+        }
+    }
 
+    public UUID getControllerUUID() {
+        return CONTROLLER_UUID;
+    }
+    public void setControllerUUID(UUID uuid) {
+        this.CONTROLLER_UUID = uuid;
+    }
+    public void unlinkController() {
+        this.CONTROLLER_UUID = null;
+    }
+    public boolean isLinked() {
+        return CONTROLLER_UUID != null;
+    }
 
+    public void syncViewAndSimDistance(float syncView, float syncSimDist) {
+        entityData.set(DATA_VIEW_DISTANCE, syncView);
+        entityData.set(DATA_SIM_DISTANCE, syncSimDist);
+    }
+    public float getSyncView() {
+        return entityData.get(DATA_VIEW_DISTANCE);
+    }
+    public float getSyncSimDist() {
+        return entityData.get(DATA_SIM_DISTANCE);
+    }
     @Override
     public InteractionResult interactAt(Player player, Vec3 vec, InteractionHand hand) {
-        // Ранний выход для клиентской стороны или неосновной руки
+        LOGGER.debug("[{}] interactAt called by player: {}, shift={}, hand={}",
+                level().isClientSide ? "CLIENT" : "SERVER", player.getName().getString(), player.isShiftKeyDown(), hand);
+
         if (!level().isClientSide && player.isShiftKeyDown()) {
-        //    System.out.println("Opening GUI for drone id=" + this.getId());
-//            NetworkHooks.openScreen((ServerPlayer) player, this, buffer -> {
-//                buffer.writeInt(this.getId());
-//            });
-            if (!this.level().isClientSide && player instanceof ServerPlayer) {
-                NetworkHooks.openScreen((ServerPlayer) player, this,
-                        buf -> buf.writeVarInt(this.getId()));
+            if (player instanceof ServerPlayer serverPlayer) {
+                LOGGER.debug("[SERVER] Opening screen for player: {}", serverPlayer.getName().getString());
+                NetworkHooks.openScreen(serverPlayer, this, buf -> buf.writeVarInt(this.getId()));
             }
             return InteractionResult.CONSUME;
         }
+
         if (hand != InteractionHand.MAIN_HAND || level().isClientSide) {
             return super.interactAt(player, vec, hand);
         }
 
         ItemStack stack = player.getItemInHand(hand);
 
-        // Обработка сброса дрона при нажатом Shift
         if (player.isShiftKeyDown() && stack.isEmpty()) {
+            LOGGER.debug("[{}] Shift-click with empty hand -> Discard drone", level().isClientSide ? "CLIENT" : "SERVER");
             discardDrone();
             return InteractionResult.SUCCESS;
         }
 
-        // Обработка подключения пульта управления
         if (stack.getItem() instanceof RemoteItem) {
+            LOGGER.debug("[{}] Attempting remote connection", level().isClientSide ? "CLIENT" : "SERVER");
             return handleRemoteConnection(player, stack)
                     ? InteractionResult.SUCCESS
                     : InteractionResult.FAIL;
@@ -133,19 +183,27 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     }
 
     private boolean handleRemoteConnection(Player player, ItemStack remote) {
+        LOGGER.debug("[{}] handleRemoteConnection called by player: {}", level().isClientSide ? "CLIENT" : "SERVER", player.getName().getString());
+
         if (player.isPassenger()) {
+            LOGGER.debug("[{}] Player is riding an entity, connection aborted", level().isClientSide ? "CLIENT" : "SERVER");
             return false;
         }
 
         CompoundTag tag = remote.getOrCreateTag();
         if (tag.contains("DroneUUID")) {
+            LOGGER.debug("[{}] Remote already linked to drone, connection aborted", level().isClientSide ? "CLIENT" : "SERVER");
             return false;
         }
 
         tag.putUUID("DroneUUID", getUUID());
-        this.CONTROLLER_UUID = player.getUUID();
+        getControllerUUID();
+        player.getUUID();
+
+        LOGGER.debug("[{}] Drone successfully linked to remote. Drone UUID: {}", level().isClientSide ? "CLIENT" : "SERVER", getUUID());
 
         if (player instanceof ServerPlayer serverPlayer) {
+            LOGGER.debug("[SERVER] Sending connection packets to player: {}", serverPlayer.getName().getString());
             sendConnectionPackets(serverPlayer);
         }
 
@@ -156,19 +214,25 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         int simDistance = player.server.getPlayerList().getSimulationDistance();
         int viewDistance = player.server.getPlayerList().getViewDistance();
 
-        PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new DroneControllerPacket(getUUID(), CONTROLLER_UUID));
+        LOGGER.debug("[SERVER] Sending DroneControllerPacket and DistanceControlPacket to {}", player.getName().getString());
+
+//        PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+//                new DroneControllerPacket(getUUID(), getControllerUUID()));
 
         PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                 new DistanceControlPacket(simDistance, viewDistance, getId()));
     }
 
     @Override
-    public void defineSynchedDroneData(){
+    protected void defineSynchedData() {
+        super.defineSynchedData();
         this.entityData.define(DATA_FLIGHT_MODE, FlightMode.NORMAL.name());
         this.entityData.define(DATA_STAB_MODE, StabMode.FPV.name());
         this.entityData.define(DATA_ZOOM_MODE, ZoomMode.DEF.name());
         this.entityData.define(DATA_VISION_MODE, VisionMode.NORMAL.name());
+        this.entityData.define(DATA_SIM_DISTANCE, 0f);
+        this.entityData.define(DATA_VIEW_DISTANCE, 0f);
+
     }
     public float getYRot() {
         return this.droneYaw;
@@ -206,10 +270,13 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         }
         return vel;
     }
+
     @Override
     public void tick() {
         super.tick();
+
         if (this.isInWater()) {
+            LOGGER.debug("[{}] Drone is in water -> syncing death", level().isClientSide ? "CLIENT" : "SERVER");
             syncDie();
             return;
         }
@@ -217,12 +284,24 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         prevRoll = droneRoll;
         prevYaw = droneYaw;
         prevPitch = dronePitch;
-        if(!isLinked()) this.velocity = new Vec3(0, -0.1, 0);
-        Vec3 newVel = calculateFrictionFactor();
-        if (newVel.lengthSqr() > getSpeed() * getSpeed()) {
-            newVel = newVel.normalize().scale(getSpeed());
+
+        if (!isLinked()) {
+            this.velocity = new Vec3(0, -0.1, 0);
+        }
+        if(!level().isClientSide) {
+            if(this.tickCount % 20 ==0) {
+          //      System.out.println("TICK CLIENT: getCurrentVisionMode() " + getCurrentVisionMode());
+//                System.out.println("TICK CLIENT: getCurrentStabMode() " + getCurrentStabMode());
+//                System.out.println("TICK CLIENT: getCurrentFlightMode() " + getCurrentFlightMode());
+//                System.out.println("TICK CLIENT: getCurrentZoomMode() " + getCurrentZoomMode());
+            }
         }
         if (!level().isClientSide && isLinked()) {
+            Vec3 newVel = calculateFrictionFactor();
+
+            if (newVel.lengthSqr() > getSpeed() * getSpeed()) {
+                newVel = newVel.normalize().scale(getSpeed());
+            }
 
             ServerLevel serverLevel = (ServerLevel) level();
             Player controller = serverLevel.getPlayerByUUID(getControllerUUID());
@@ -230,11 +309,24 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
             if (controller != null) {
                 checkAcceptableArea(serverLevel, controller, newVel);
             }
-        }
-        if(velocity != null) {
-            this.velocity = newVel;
-            setDeltaMovement(velocity);
-            move(MoverType.SELF, velocity);
+
+            if(this.tickCount % 20 ==0) {
+//                System.out.println("TICK SERVER: getCurrentVisionMode() " + getCurrentVisionMode());
+//                System.out.println("TICK SERVER: getCurrentStabMode() " + getCurrentStabMode());
+//                System.out.println("TICK SERVER: getCurrentFlightMode() " + getCurrentFlightMode());
+//                System.out.println("TICK SERVER: getCurrentZoomMode() " + getCurrentZoomMode());
+            }
+
+
+            if (velocity != null) {
+
+                this.velocity = newVel;
+                if(this.velocity == newVel) {
+                //    LOGGER.debug("[SERVER] Updating velocity to {}", newVel);
+                }
+                setDeltaMovement(velocity);
+                move(MoverType.SELF, velocity);
+            }
         }
     }
 
@@ -278,11 +370,11 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
     /** CLIENT-SERVER */
     public void applyView(float yaw, float pitch, float roll) {
+   //     LOGGER.debug("[{}] applyView called: yaw={}, pitch={}, roll={}", level().isClientSide ? "CLIENT" : "SERVER", yaw, pitch, roll);
         setDroneDirection(yaw, pitch);
-        if(getStabMode() == StabMode.FPV) setDroneRoll(roll);
+        if (getStabMode() == StabMode.FPV) setDroneRoll(roll);
     }
     public void applyMovement(Vec3 input) {
-        this.lastInput = input;
         this.velocity = this.velocity.add(input);
     }
 
@@ -290,7 +382,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-
+        writeNBT(tag);
         tag.putFloat("Yaw", getDroneYaw());
         tag.putFloat("Pitch", getDronePitch());
         tag.putFloat("Roll", getDroneRoll());
@@ -300,7 +392,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         if (getControllerUUID() != null) {
             tag.putUUID("ControllerUUID", getControllerUUID());
         }
-        writeNBT(tag);
+
     }
     public void writeNBT(CompoundTag tag) {
         ListTag itemList = new ListTag();
@@ -329,7 +421,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-
+        readNBT(tag);
         setDroneDirection(tag.getFloat("Yaw"), tag.getFloat("Pitch"));
         setDroneRoll(tag.getFloat("Roll"));
         if (tag.contains("FlightMode")) {
@@ -346,7 +438,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         } else {
             this.setControllerUUID(null);
         }
-        readNBT(tag);
+
     }
 
 
@@ -371,9 +463,12 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
 
 
     /** STANDART SETTERS AND GETTER*/
+//    @Override
+//    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+//        return NetworkHooks.getEntitySpawningPacket(this);
+//    }
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {return new ClientboundAddEntityPacket(this);}
-
     public void setDroneDirection(float yaw,float pitch) {
         this.setDroneYaw(yaw);
         this.setDronePitch(pitch);
@@ -398,7 +493,9 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     }
 
     public boolean validateUpdates(Item item, int slotIndex) {
-        return inventory.getItem(slotIndex).getItem() == item;
+        if (slotIndex < 0 || slotIndex >= getContainerSize()) return false;
+        ItemStack stack = inventory.getItem(slotIndex); // Или inventory.getStackInSlot(slotIndex);
+        return !stack.isEmpty() && stack.getItem() == item;
     }
 
 
@@ -425,6 +522,7 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         return StabMode.valueOf(entityData.get(DATA_STAB_MODE));
     }
     public VisionMode getVisionMode() {
+
         return VisionMode.valueOf(this.entityData.get(DATA_VISION_MODE));
     }
 
@@ -432,15 +530,21 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
     public ZoomMode getZoomMode() {
         return ZoomMode.valueOf(entityData.get(DATA_ZOOM_MODE));
     }
+    public void syncVisionModeToClients() {
+        PacketSystem.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> this),
+                new DroneModesSyncPacket(this.getUUID(), getCurrentFlightMode(), getCurrentStabMode(), getCurrentZoomMode(), getCurrentVisionMode()));
+    }
 
     public void cycleVisionMode() {
         VisionMode current = getCurrentVisionMode();
         List<VisionMode> availableModes = getAvailableVisionModes();
         int index = availableModes.indexOf(current);
+
         if (index == -1) {
             setVisionMode(availableModes.get(0));
             return;
         }
+
         int nextIndex = CTRL_KEY.isDown() ? (index - 1 + availableModes.size()) % availableModes.size() : (index + 1) % availableModes.size();
         VisionMode next = availableModes.get(nextIndex);
         setVisionMode(next);
@@ -452,7 +556,9 @@ public class DroneEntity extends BaseDroneEntity implements ContainerEntity {
         if (validateUpdates(InitItems.IR_CONTROLLER.get(), 1)) {
             available.add(VisionMode.MONOCHROME);
             available.add(VisionMode.THERMOCHROME);
+            System.out.println("IR_CONTROLLER" + validateUpdates(InitItems.TI_CONTROLLER.get(), 6));
             if (validateUpdates(InitItems.TI_CONTROLLER.get(), 6)) {
+                System.out.println("TI_CONTROLLER");
                 available.add(VisionMode.GREENCHROME);
                 available.add(VisionMode.THERMAL);
             }
