@@ -30,7 +30,7 @@ public class ShaderRenderer {
 
 
         DroneEntity drone;
-        if(mc.getCameraEntity() instanceof DroneEntity) {
+        if(mc.getCameraEntity() instanceof DroneEntity && mc.options.getCameraType().isFirstPerson()) {
             drone = (DroneEntity) mc.getCameraEntity();
             switch (drone.getVisionMode()) {
                 case NORMAL -> {

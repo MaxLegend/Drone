@@ -9,11 +9,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.lwjgl.glfw.GLFW;
 
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
+import ru.tesmio.drone.packets.both.DroneUpdateTilts;
 import ru.tesmio.drone.packets.server.*;
 
 //TODO: Чистка кода, стилизация, комментирование
@@ -109,6 +109,32 @@ public class DroneController {
                     drone.cycleVisionMode();
             }
         }
+    }
+    public static void tiltDrone(DroneEntity drone) {
+        float maxTilt = 0.38f;
+
+        float forwardInput = 0;
+        float sidewaysInput = 0;
+
+        if (mc.options.keyUp.isDown()) forwardInput -= 1;
+        if (mc.options.keyDown.isDown()) forwardInput += 1;
+        if (mc.options.keyLeft.isDown()) sidewaysInput += 1;
+        if (mc.options.keyRight.isDown()) sidewaysInput -= 1;
+
+        float length = Mth.sqrt(forwardInput * forwardInput + sidewaysInput * sidewaysInput);
+        if (length > 0) {
+            forwardInput /= length;
+            sidewaysInput /= length;
+        }
+
+        float combinedTilt = maxTilt * length;
+        sidewaysInput = -sidewaysInput;
+
+        float targetTiltX = forwardInput * combinedTilt;
+        float targetTiltZ = sidewaysInput * combinedTilt;
+        drone.updateTilt(targetTiltX,targetTiltZ);
+        PacketSystem.CHANNEL.sendToServer(new DroneUpdateTilts(drone.getUUID(), targetTiltX, targetTiltZ));
+
     }
     public static void moveDrone(DroneEntity drone) {
         Vec3 movement = Vec3.ZERO;
@@ -207,6 +233,8 @@ public class DroneController {
         }
 
         drone.applyMovement(movement);
+        tiltDrone(drone);
+
         PacketSystem.CHANNEL.sendToServer(new DroneMovePacket(drone.getUUID(), movement));
 
     }

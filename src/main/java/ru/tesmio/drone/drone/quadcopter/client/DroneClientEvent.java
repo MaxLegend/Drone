@@ -11,8 +11,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
+import ru.tesmio.drone.packets.PacketClientHandler;
 import ru.tesmio.drone.packets.PacketSystem;
-import ru.tesmio.drone.packets.server.*;
+import ru.tesmio.drone.packets.both.DroneViewPacket;
 import ru.tesmio.drone.registry.InitItems;
 import ru.tesmio.drone.shader.RenderEntityMask;
 
@@ -66,7 +67,11 @@ public class DroneClientEvent {
             RenderEntityMask.initRenderTargets();
             return;
         }
+
         freezePlayer(mc.player);
+      //  drone.applyAnimations();
+
+     //   drone.rotorAngle = (drone.rotorAngle + drone.angularVelocity / 20f) % 360f;
         if (!guiOpen) {
             if(!drone.validateUpdates(InitItems.FLY_CONTROLLER.get(), 4)) {
                 mc.player.displayClientMessage(Component.translatable("warn.set_fly_controller"), true);
@@ -76,7 +81,9 @@ public class DroneClientEvent {
 
             moveDrone(drone);
             turnDrone(drone);
+
             PacketSystem.CHANNEL.sendToServer(new DroneViewPacket(drone.getUUID(), drone.getDroneYaw(), drone.getDronePitch(), drone.getDroneRoll()));
+            PacketClientHandler.processPendingTilts();
         }
         stopControl();
     }

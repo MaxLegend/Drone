@@ -11,9 +11,13 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.client.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static ru.tesmio.drone.drone.quadcopter.control.DroneController.mouseGrabbed;
 @OnlyIn(Dist.CLIENT)
 public class PacketClientHandler {
+    private static final List<DroneUpdateTiltsClient> pendingTilts = new ArrayList<>();
     static Minecraft mc = net.minecraft.client.Minecraft.getInstance();
     static Level level = net.minecraft.client.Minecraft.getInstance().level;
     static Player player = Minecraft.getInstance().player;
@@ -35,13 +39,61 @@ public class PacketClientHandler {
             drone.readNBT(msg.inventoryTag);
         }
     }
+    public static void handleDroneUpdateTiltsClient(DroneUpdateTiltsClient msg) {
+        Minecraft mc = Minecraft.getInstance();
+        Level level = mc.level;
+        if (level == null) return;
+
+        Entity e = level.getEntity(msg.droneId);
+        if (e instanceof DroneEntity drone) {
+
+            drone.setTiltX(msg.tiltX);
+            drone.setTiltZ(msg.tiltZ);
+        }else {
+            // Сохраняем в очередь, сущности ещё нет
+            pendingTilts.add(msg);
+        }
+    }
+    public static void handleAnimationClientPacket(AnimationClientPacket msg) {
+        Minecraft mc = Minecraft.getInstance();
+        Level level = mc.level;
+        if (level == null) return;
+
+        Entity e = level.getEntity(msg.droneId);
+        if (e instanceof DroneEntity drone) {
+
+            drone.angularVelocity = msg.angularVelocity;
+
+            drone.bodyXRot = msg.bodyXRot;
+            drone.bodyZRot = msg.bodyZRot;
+        }
+    }
+    public static void processPendingTilts() {
+        Minecraft mc = Minecraft.getInstance();
+        Level level = mc.level;
+        if (level == null) return;
+
+        pendingTilts.removeIf(msg -> {
+            Entity e = level.getEntity(msg.droneId);
+            if (e instanceof DroneEntity drone) {
+                applyTilt(drone, msg);
+                return true; // успешно применено → удалить из очереди
+            }
+            return false; // оставить для следующего тика
+        });
+    }
+    private static void applyTilt(DroneEntity drone, DroneUpdateTiltsClient msg) {
+        drone.setTiltX(msg.tiltX);
+        drone.setTiltZ(msg.tiltZ);
+    }
     public static void handleDroneSyncViewPacket(DroneSyncViewPacket msg) {
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) return;
         Entity e = level.getEntity(msg.droneId);
         if (e instanceof DroneEntity drone) {
-            drone.applyView(msg.yaw, msg.pitch, msg.roll);
+            drone.getViewXRot(mc.getPartialTick());
+            drone.getViewYRot(mc.getPartialTick());
         }
     }
     public static void handleDroneControllerPacket(DroneControllerPacket msg) {

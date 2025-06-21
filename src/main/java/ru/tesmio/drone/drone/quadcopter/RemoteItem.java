@@ -22,6 +22,7 @@ import ru.tesmio.drone.Dronecraft;
 import ru.tesmio.drone.packets.PacketSystem;
 import ru.tesmio.drone.packets.client.DistanceControlPacket;
 import ru.tesmio.drone.packets.client.DroneControllerPacket;
+import ru.tesmio.drone.packets.client.DroneInventorySyncPacket;
 import ru.tesmio.drone.packets.server.DroneReconnectPacket;
 
 
@@ -74,10 +75,15 @@ public class RemoteItem extends Item {
         if (!level.isClientSide) {
             UUID targetUUID = getLinkedDroneUUID(stack);
             DroneEntity drone = findDroneByUUID(player, targetUUID);
+            CompoundTag invTag = new CompoundTag();
+
             if (drone != null) {
+                drone.writeNBT(invTag);
                 if (player instanceof ServerPlayer serverPlayer) {
                     PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
                             new DroneControllerPacket(drone.getUUID(), player.getUUID()));
+                    PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+                            new DroneInventorySyncPacket(drone.getUUID(), invTag));
                 }
                 return InteractionResultHolder.success(stack);
             }
@@ -86,7 +92,6 @@ public class RemoteItem extends Item {
 
         UUID targetUUID = getLinkedDroneUUID(stack);
         DroneEntity drone = findDroneByUUID(player, targetUUID);
-        System.out.println("drone " + drone);
         if (drone != null) {
             Minecraft.getInstance().setCameraEntity(drone);
             return InteractionResultHolder.success(stack);

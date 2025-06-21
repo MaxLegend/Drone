@@ -9,6 +9,7 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.PacketDistributor;
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 import ru.tesmio.drone.packets.PacketSystem;
+import ru.tesmio.drone.packets.both.DroneViewPacket;
 import ru.tesmio.drone.packets.client.DistanceControlPacket;
 import ru.tesmio.drone.packets.client.DroneControllerPacket;
 import ru.tesmio.drone.packets.client.DroneInventorySyncPacket;
@@ -46,7 +47,7 @@ public class DroneReconnectPacket {
 
                     // 1. Основной пакет контроллера
                     PacketSystem.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                            new DroneControllerPacket(droneEntity.getUUID(), droneEntity.getControllerUUID()));
+                            new DroneControllerPacket(drone.getUUID(), player.getUUID()));
 
                     // 2. Синхронизация дистанций
                     int simChunks = player.getServer().getPlayerList().getSimulationDistance();

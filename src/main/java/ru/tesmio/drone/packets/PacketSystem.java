@@ -5,6 +5,8 @@ import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import ru.tesmio.drone.Dronecraft;
+import ru.tesmio.drone.packets.both.DroneUpdateTilts;
+import ru.tesmio.drone.packets.both.DroneViewPacket;
 import ru.tesmio.drone.packets.client.*;
 import ru.tesmio.drone.packets.server.*;
 
@@ -14,7 +16,7 @@ import java.util.Optional;
 //TODO: Реализовать методы оптимизации пакетов: квантование и предсказание как предлагает deepseek
 // (с линейной интерполяцией) и отправкой не каждый тик, а каждые три-пять тиков, а на клиенте проводить
 // интерполяцию между этими значениями. Доработать в стиле UDP - с возможностью потери пакетов
-// добавить сжатие данных. Реализовать приоритезацию и буферизацию пакетов
+// добавить сжатие данных. Реализовать приоритезацию и буферизацию пакетову
 public class PacketSystem {
     private static int id = 0;
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -33,6 +35,10 @@ public class PacketSystem {
                 DroneViewPacket::encode,
                 DroneViewPacket::decode,
                 DroneViewPacket::handle);
+        CHANNEL.registerMessage(id++, DroneSyncViewPacket.class,
+                DroneSyncViewPacket::encode,
+                DroneSyncViewPacket::decode,
+                DroneSyncViewPacket::handle);
         CHANNEL.registerMessage(id++,DroneDeathPacket .class,
     DroneDeathPacket::encode,
     DroneDeathPacket::decode,
@@ -67,5 +73,13 @@ public class PacketSystem {
                 DroneModesC2SP::encode,
                 DroneModesC2SP::decode,
                 DroneModesC2SP::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, DroneUpdateTilts.class,
+                DroneUpdateTilts::encode,
+                DroneUpdateTilts::decode,
+                DroneUpdateTilts::handle);
+        CHANNEL.registerMessage(id++, DroneUpdateTiltsClient.class,
+                DroneUpdateTiltsClient::encode,
+                DroneUpdateTiltsClient::decode,
+                DroneUpdateTiltsClient::handle);
     }
 }

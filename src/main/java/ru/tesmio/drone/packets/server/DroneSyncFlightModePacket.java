@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.network.NetworkEvent;
-import ru.tesmio.drone.drone.BaseDroneEntity;
+
 import ru.tesmio.drone.drone.quadcopter.DroneEntity;
 
 import java.util.UUID;
@@ -27,7 +27,7 @@ public class DroneSyncFlightModePacket {
     }
     public static DroneSyncFlightModePacket decode(FriendlyByteBuf buf) {
         UUID droneUUID = buf.readUUID();
-        BaseDroneEntity.FlightMode flightMode = buf.readEnum(DroneEntity.FlightMode.class);
+        DroneEntity.FlightMode flightMode = buf.readEnum(DroneEntity.FlightMode.class);
         return new DroneSyncFlightModePacket(droneUUID, flightMode);
     }
     public static void handle(DroneSyncFlightModePacket msg, Supplier<NetworkEvent.Context> ctx) {
